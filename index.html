@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#121614">
+    <title>Repeat</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header class="app-header" aria-label="Repeat header">
+      <div>
+        <h1>Repeat</h1>
+        <p>Calm local media</p>
+      </div>
+    </header>
+
+    <main id="app" class="app-shell">
+      <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
+        <h2 id="homeTitle" class="sr-only">Home</h2>
+        <div class="home-actions">
+          <button id="kidModeButton" class="giant-button kid-button" type="button">
+            <span aria-hidden="true">▶</span>
+            <strong>Kid mode</strong>
+          </button>
+          <button id="parentModeButton" class="giant-button parent-button" type="button">
+            <span aria-hidden="true">⚙</span>
+            <strong>Parent mode</strong>
+          </button>
+        </div>
+      </section>
+
+      <section id="unlockScreen" class="screen" aria-labelledby="unlockTitle">
+        <button class="quiet-link" data-go-home type="button">Home</button>
+        <h2 id="unlockTitle">Parent unlock</h2>
+        <form id="unlockForm" class="panel">
+          <label for="unlockCode">Code</label>
+          <input id="unlockCode" class="code-input" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]*">
+          <button class="primary-action" type="submit">Enter</button>
+          <p id="unlockMessage" class="message" role="status"></p>
+        </form>
+      </section>
+
+      <section id="parentScreen" class="screen parent-layout" aria-labelledby="parentTitle">
+        <div class="screen-topline">
+          <button class="quiet-link" data-go-home type="button">Home</button>
+          <h2 id="parentTitle">Parent mode</h2>
+        </div>
+
+        <section class="panel" aria-labelledby="settingsTitle">
+          <h3 id="settingsTitle">Settings</h3>
+          <div class="settings-grid">
+            <label>
+              Unlock code
+              <input id="settingCode" type="text" inputmode="numeric" autocomplete="off">
+            </label>
+            <label>
+              Speech rate
+              <input id="settingSpeechRate" type="range" min="0.6" max="1.2" step="0.1">
+              <output id="speechRateOutput" for="settingSpeechRate"></output>
+            </label>
+            <label class="check-row">
+              <input id="settingAudioFeedback" type="checkbox">
+              Audio feedback
+            </label>
+            <label class="check-row">
+              <input id="settingContinuousLoop" type="checkbox">
+              Continuous loop
+            </label>
+            <label>
+              Theme
+              <select id="settingTheme">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+          </div>
+          <button id="saveSettingsButton" class="primary-action" type="button">Save settings</button>
+          <p id="settingsMessage" class="message" role="status"></p>
+        </section>
+
+        <section class="panel" aria-labelledby="addVideoTitle">
+          <h3 id="addVideoTitle">Add video</h3>
+          <form id="addVideoForm" class="video-form">
+            <label>
+              Title
+              <input id="videoTitle" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              YouTube URL
+              <input id="videoUrl" type="url" autocomplete="off" required>
+            </label>
+            <label>
+              Icon
+              <input id="videoIcon" type="text" autocomplete="off" maxlength="4" placeholder="🚂" required>
+            </label>
+            <button class="primary-action" type="submit">Add</button>
+            <p id="addVideoMessage" class="message" role="status"></p>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="savedVideosTitle">
+          <div class="section-row">
+            <h3 id="savedVideosTitle">Saved videos</h3>
+            <button id="clearAllButton" class="danger-action" type="button">Clear all</button>
+          </div>
+          <ol id="parentVideoList" class="parent-video-list"></ol>
+          <p id="emptyParentMessage" class="empty-note">No videos yet.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="tomlTitle">
+          <h3 id="tomlTitle">TOML</h3>
+          <label>
+            Import TOML
+            <textarea id="importToml" spellcheck="false" rows="9"></textarea>
+          </label>
+          <div class="button-row">
+            <button id="importTomlButton" class="secondary-action" type="button">Import TOML</button>
+            <button id="copyTomlButton" class="secondary-action" type="button">Copy TOML</button>
+            <button id="downloadTomlButton" class="secondary-action" type="button">Download TOML</button>
+          </div>
+          <label>
+            Export TOML
+            <textarea id="exportToml" spellcheck="false" rows="9" readonly></textarea>
+          </label>
+          <p id="tomlMessage" class="message" role="status"></p>
+        </section>
+      </section>
+
+      <section id="kidScreen" class="screen kid-layout" aria-labelledby="kidTitle">
+        <div class="screen-topline kid-topline">
+          <h2 id="kidTitle">Choose</h2>
+          <button class="quiet-link" data-go-home type="button">Home</button>
+        </div>
+        <section aria-labelledby="favoritesTitle">
+          <h3 id="favoritesTitle">Favorites</h3>
+          <div id="favoritesRow" class="favorites-row"></div>
+          <p id="emptyFavoritesMessage" class="empty-note">No favorites yet.</p>
+        </section>
+        <section aria-labelledby="approvedTitle">
+          <h3 id="approvedTitle">Videos</h3>
+          <div id="kidVideoGrid" class="kid-grid"></div>
+          <p id="emptyKidMessage" class="empty-note">Ask a parent to add videos.</p>
+        </section>
+      </section>
+
+      <section id="playerScreen" class="screen player-layout" aria-labelledby="playerTitle">
+        <h2 id="playerTitle" class="sr-only">Player</h2>
+        <div id="playerFrameWrap" class="player-frame-wrap"></div>
+        <div class="player-controls" aria-label="Player controls">
+          <button id="keepButton" class="player-button" type="button">❤️<span>keep</span></button>
+          <button id="againButton" class="player-button" type="button">🔁<span>again</span></button>
+          <button id="playerHomeButton" class="player-button" type="button">🏠<span>home</span></button>
+          <button id="stopButton" class="player-button stop" type="button">⏹<span>stop</span></button>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
