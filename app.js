@@ -235,11 +235,18 @@ function makeVideoTile(video) {
   button.className = "video-tile";
   button.setAttribute("aria-label", video.title);
 
+  const thumbnail = document.createElement("img");
+  thumbnail.className = "video-thumbnail";
+  thumbnail.src = `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`;
+  thumbnail.alt = "";
+  thumbnail.referrerPolicy = "no-referrer";
+  thumbnail.addEventListener("error", () => thumbnail.classList.add("unavailable"));
+
   const title = document.createElement("span");
   title.className = "tile-title";
   title.textContent = video.title;
 
-  button.append(title);
+  button.append(thumbnail, title);
   button.addEventListener("click", () => {
     openPlayer(video.id);
   });

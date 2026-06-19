@@ -313,10 +313,25 @@ textarea {
 
 .video-tile {
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 150px;
-  place-items: center;
+  align-items: center;
+  gap: 10px;
   padding: 10px;
   border-radius: 8px;
+}
+
+.video-thumbnail {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  object-fit: cover;
+}
+
+.video-thumbnail.unavailable {
+  opacity: 0;
 }
 
 .video-tile .tile-title {
