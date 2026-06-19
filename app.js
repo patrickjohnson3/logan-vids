@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "repeat.runtimeState.v1";
+const MAX_TITLE_LENGTH = 48;
 const DEFAULT_STATE = {
   settings: {
     unlockCode: "2468",
@@ -14,6 +15,7 @@ const DEFAULT_STATE = {
 let state = loadState();
 let currentVideoId = null;
 let unlockReturnScreen = "home";
+let speechPlaybackToken = 0;
 
 const screens = {
   home: document.getElementById("homeScreen"),
@@ -289,6 +291,11 @@ function addVideoFromForm(event) {
     return;
   }
 
+  if (title.length > MAX_TITLE_LENGTH) {
+    setMessage(els.addVideoMessage, `Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`);
+    return;
+  }
+
   if (!result.ok) {
     setMessage(els.addVideoMessage, result.message);
     return;
@@ -337,11 +344,7 @@ function openPlayer(id) {
   updateFavoriteButton();
 
   // Wait for the tile label before starting the video, so the two audio cues do not compete.
-  speak(findVideo(id).title, () => {
-    if (currentVideoId === id && screens.player.classList.contains("active")) {
-      renderPlayer(true);
-    }
-  });
+  speakThenPlay(findVideo(id).title, id);
 }
 
 function renderPlayer(autoplay) {
@@ -387,12 +390,34 @@ function updateFavoriteButton() {
 }
 
 function playCurrentAgain() {
-  const videoId = currentVideoId;
-  speak("again", () => {
-    if (currentVideoId === videoId && screens.player.classList.contains("active")) {
+  speakThenPlay("again", currentVideoId);
+}
+
+function speakThenPlay(text, videoId) {
+  const playbackToken = ++speechPlaybackToken;
+  const startPlayer = once(() => {
+    if (
+      playbackToken === speechPlaybackToken &&
+      currentVideoId === videoId &&
+      screens.player.classList.contains("active")
+    ) {
       renderPlayer(true);
     }
   });
+
+  // Some mobile speech engines never emit end/error; do not strand the child on an empty player.
+  const timeoutId = window.setTimeout(startPlayer, estimateSpeechTimeout(text));
+  speak(text, () => {
+    window.clearTimeout(timeoutId);
+    startPlayer();
+  });
+}
+
+function estimateSpeechTimeout(text) {
+  const speechRate = Number(state.settings.speechRate);
+  const rate = Number.isFinite(speechRate) ? Math.min(Math.max(speechRate, 0.6), 1.2) : 0.9;
+  const milliseconds = Math.ceil((String(text).length / (12 * rate)) * 1000) + 1000;
+  return Math.min(Math.max(milliseconds, 3000), 12000);
 }
 
 function returnToKidMode() {
@@ -618,6 +643,10 @@ function parseToml(text) {
     const video = nextState.videos[index];
     if (!video.title || !video.url) {
       return { ok: false, message: `Video ${index + 1} needs title and url values.` };
+    }
+
+    if (video.title.length > MAX_TITLE_LENGTH) {
+      return { ok: false, message: `Video ${index + 1} has a title longer than ${MAX_TITLE_LENGTH} characters.` };
     }
 
     const parsedUrl = parseYouTubeUrl(video.url);
