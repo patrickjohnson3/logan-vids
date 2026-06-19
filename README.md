@@ -4,6 +4,10 @@ Repeat is a calm, local-first media player for nonverbal and autistic children. 
 
 The app is a static site: no framework, package manager, account, backend, cloud sync, analytics, or build step is required.
 
+## Live Demo
+
+[patrickjohnson3.github.io/logan-vids/](https://patrickjohnson3.github.io/logan-vids/)
+
 ## Run locally
 
 Open `index.html` directly in a browser, or serve the directory:
