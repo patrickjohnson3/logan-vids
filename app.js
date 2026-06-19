@@ -13,6 +13,7 @@ const DEFAULT_STATE = {
 
 let state = loadState();
 let currentVideoId = null;
+let unlockReturnScreen = "home";
 
 const screens = {
   home: document.getElementById("homeScreen"),
@@ -25,6 +26,8 @@ const screens = {
 const els = {
   kidModeButton: document.getElementById("kidModeButton"),
   parentModeButton: document.getElementById("parentModeButton"),
+  kidParentButton: document.getElementById("kidParentButton"),
+  unlockBackButton: document.getElementById("unlockBackButton"),
   unlockForm: document.getElementById("unlockForm"),
   unlockCode: document.getElementById("unlockCode"),
   unlockMessage: document.getElementById("unlockMessage"),
@@ -74,12 +77,9 @@ function bindEvents() {
     showScreen("kid");
   });
 
-  els.parentModeButton.addEventListener("click", () => {
-    els.unlockCode.value = "";
-    setMessage(els.unlockMessage, "");
-    showScreen("unlock");
-    els.unlockCode.focus();
-  });
+  els.parentModeButton.addEventListener("click", () => openParentUnlock("home"));
+  els.kidParentButton.addEventListener("click", () => openParentUnlock("kid"));
+  els.unlockBackButton.addEventListener("click", () => showScreen(unlockReturnScreen));
 
   document.querySelectorAll("[data-go-home]").forEach((button) => {
     button.addEventListener("click", () => showScreen("home"));
@@ -116,6 +116,15 @@ function showScreen(name) {
   screens[name].classList.add("active");
   if (name === "parent") renderParent();
   if (name === "kid") renderKid();
+}
+
+function openParentUnlock(returnScreen) {
+  unlockReturnScreen = returnScreen;
+  els.unlockCode.value = "";
+  els.unlockBackButton.textContent = returnScreen === "kid" ? "Kid mode" : "Home";
+  setMessage(els.unlockMessage, "");
+  showScreen("unlock");
+  els.unlockCode.focus();
 }
 
 function loadState() {
