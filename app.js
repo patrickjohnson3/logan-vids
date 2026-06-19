@@ -6,8 +6,7 @@ const DEFAULT_STATE = {
     unlockCode: "2468",
     audioFeedback: "true",
     speechRate: "0.9",
-    theme: "dark",
-    continuousLoop: "false"
+    theme: "dark"
   },
   videos: []
 };
@@ -34,7 +33,6 @@ const els = {
   settingSpeechRate: document.getElementById("settingSpeechRate"),
   speechRateOutput: document.getElementById("speechRateOutput"),
   settingTheme: document.getElementById("settingTheme"),
-  settingContinuousLoop: document.getElementById("settingContinuousLoop"),
   saveSettingsButton: document.getElementById("saveSettingsButton"),
   settingsMessage: document.getElementById("settingsMessage"),
   addVideoForm: document.getElementById("addVideoForm"),
@@ -156,7 +154,7 @@ function normalizeState(raw) {
         id: video.id,
         title: String(video.title || "Untitled"),
         youtubeUrl: String(video.youtubeUrl || ""),
-        embedUrl: String(video.embedUrl || buildEmbedUrl(video.id, false)),
+        embedUrl: String(video.embedUrl || buildEmbedUrl(video.id)),
         favorite: String(video.favorite || "false")
       }));
   }
@@ -180,7 +178,6 @@ function renderParent() {
   els.settingSpeechRate.value = state.settings.speechRate;
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;
-  els.settingContinuousLoop.checked = state.settings.continuousLoop === "true";
   els.exportToml.value = writeToml(state);
 
   els.parentVideoList.innerHTML = "";
@@ -244,7 +241,6 @@ function makeVideoTile(video) {
 
   button.append(title);
   button.addEventListener("click", () => {
-    speak(video.title);
     openPlayer(video.id);
   });
 
@@ -262,7 +258,6 @@ function saveSettingsFromForm() {
   state.settings.audioFeedback = String(els.settingAudioFeedback.checked);
   state.settings.speechRate = els.settingSpeechRate.value;
   state.settings.theme = els.settingTheme.value;
-  state.settings.continuousLoop = String(els.settingContinuousLoop.checked);
   saveState();
   setMessage(els.settingsMessage, "Settings saved.");
 }
@@ -292,7 +287,7 @@ function addVideoFromForm(event) {
     id: result.id,
     title,
     youtubeUrl: url,
-    embedUrl: buildEmbedUrl(result.id, false),
+    embedUrl: buildEmbedUrl(result.id),
     favorite: "false"
   });
 
@@ -322,11 +317,17 @@ function clearAllVideos() {
 
 function openPlayer(id) {
   currentVideoId = id;
-  renderPlayer(false);
   showScreen("player");
+
+  // Wait for the tile label before starting the video, so the two audio cues do not compete.
+  speak(findVideo(id).title, () => {
+    if (currentVideoId === id && screens.player.classList.contains("active")) {
+      renderPlayer(true);
+    }
+  });
 }
 
-function renderPlayer(loop) {
+function renderPlayer(autoplay) {
   const video = findVideo(currentVideoId);
   if (!video) {
     returnToKidMode();
@@ -336,9 +337,11 @@ function renderPlayer(loop) {
   els.playerFrameWrap.innerHTML = "";
   const iframe = document.createElement("iframe");
   iframe.title = video.title;
-  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-  iframe.allowFullscreen = true;
-  iframe.src = buildEmbedUrl(video.id, loop || state.settings.continuousLoop === "true");
+  // Keep the remote player inside this frame: no fullscreen, popups, sharing, or top-level navigation.
+  iframe.allow = "autoplay; encrypted-media";
+  iframe.sandbox = "allow-scripts allow-same-origin";
+  iframe.referrerPolicy = "strict-origin-when-cross-origin";
+  iframe.src = buildEmbedUrl(video.id, autoplay);
   els.playerFrameWrap.append(iframe);
 }
 
@@ -351,8 +354,12 @@ function keepCurrentVideo() {
 }
 
 function playCurrentAgain() {
-  speak("again");
-  renderPlayer(true);
+  const videoId = currentVideoId;
+  speak("again", () => {
+    if (currentVideoId === videoId && screens.player.classList.contains("active")) {
+      renderPlayer(true);
+    }
+  });
 }
 
 function returnToKidMode() {
@@ -421,29 +428,49 @@ function validateVideoId(id) {
   return { ok: true, id };
 }
 
-function buildEmbedUrl(id, loop) {
+function buildEmbedUrl(id, autoplay = false) {
   const params = new URLSearchParams({
     rel: "0",
     playsinline: "1",
-    controls: "1"
+    controls: "1",
+    loop: "1",
+    playlist: id,
+    modestbranding: "1"
   });
 
-  if (loop) {
-    params.set("loop", "1");
-    params.set("playlist", id);
+  if (autoplay) {
     params.set("autoplay", "1");
   }
 
   return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
 }
 
-function speak(text) {
-  if (state.settings.audioFeedback !== "true") return;
-  if (!("speechSynthesis" in window)) return;
+function speak(text, onComplete) {
+  const finish = once(onComplete);
+  if (state.settings.audioFeedback !== "true") {
+    finish();
+    return;
+  }
+  if (!("speechSynthesis" in window)) {
+    finish();
+    return;
+  }
+
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = Number(state.settings.speechRate) || 0.9;
+  utterance.addEventListener("end", finish);
+  utterance.addEventListener("error", finish);
   window.speechSynthesis.speak(utterance);
+}
+
+function once(callback) {
+  let called = false;
+  return () => {
+    if (called || typeof callback !== "function") return;
+    called = true;
+    callback();
+  };
 }
 
 function importTomlFromTextarea() {
@@ -539,6 +566,7 @@ function parseToml(text) {
     const value = stringResult.value;
 
     if (section === "settings") {
+      if (key === "continuousLoop") continue;
       if (!(key in nextState.settings)) {
         return failToml(lineNumber, `Unknown setting "${key}".`);
       }
@@ -573,7 +601,7 @@ function parseToml(text) {
       id: parsedUrl.id,
       title: video.title,
       youtubeUrl: video.url,
-      embedUrl: buildEmbedUrl(parsedUrl.id, false),
+      embedUrl: buildEmbedUrl(parsedUrl.id),
       favorite: video.favorite === "true" ? "true" : "false"
     };
   }
@@ -592,8 +620,7 @@ function writeToml(currentState) {
     `unlockCode = "${escapeTomlString(currentState.settings.unlockCode)}"`,
     `audioFeedback = "${escapeTomlString(currentState.settings.audioFeedback)}"`,
     `speechRate = "${escapeTomlString(currentState.settings.speechRate)}"`,
-    `theme = "${escapeTomlString(currentState.settings.theme)}"`,
-    `continuousLoop = "${escapeTomlString(currentState.settings.continuousLoop)}"`
+    `theme = "${escapeTomlString(currentState.settings.theme)}"`
   ];
 
   currentState.videos.forEach((video) => {
