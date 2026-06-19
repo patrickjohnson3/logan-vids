@@ -268,22 +268,6 @@ textarea {
   background: var(--bg);
 }
 
-.parent-video-main {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: 10px;
-  align-items: center;
-}
-
-.parent-video-icon {
-  display: grid;
-  min-height: 56px;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--surface-2);
-  font-size: 2rem;
-}
-
 .parent-video-title {
   margin: 0;
   font-weight: 700;
@@ -331,20 +315,13 @@ textarea {
   display: grid;
   min-height: 150px;
   place-items: center;
-  align-content: center;
-  gap: 10px;
   padding: 10px;
   border-radius: 8px;
 }
 
-.video-tile .tile-icon {
-  font-size: clamp(2.8rem, 17vw, 5rem);
-  line-height: 1;
-}
-
 .video-tile .tile-title {
   max-width: 100%;
-  font-size: 1.08rem;
+  font-size: 1.2rem;
   font-weight: 800;
   line-height: 1.15;
   overflow-wrap: anywhere;

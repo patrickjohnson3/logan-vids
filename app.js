@@ -40,7 +40,6 @@ const els = {
   addVideoForm: document.getElementById("addVideoForm"),
   videoTitle: document.getElementById("videoTitle"),
   videoUrl: document.getElementById("videoUrl"),
-  videoIcon: document.getElementById("videoIcon"),
   addVideoMessage: document.getElementById("addVideoMessage"),
   parentVideoList: document.getElementById("parentVideoList"),
   emptyParentMessage: document.getElementById("emptyParentMessage"),
@@ -156,7 +155,6 @@ function normalizeState(raw) {
       .map((video) => ({
         id: video.id,
         title: String(video.title || "Untitled"),
-        icon: String(video.icon || "▶"),
         youtubeUrl: String(video.youtubeUrl || ""),
         embedUrl: String(video.embedUrl || buildEmbedUrl(video.id, false)),
         favorite: String(video.favorite || "false")
@@ -192,22 +190,12 @@ function renderParent() {
     const item = document.createElement("li");
     item.className = "parent-video-item";
 
-    const main = document.createElement("div");
-    main.className = "parent-video-main";
-
-    const icon = document.createElement("div");
-    icon.className = "parent-video-icon";
-    icon.textContent = video.icon;
-
-    const text = document.createElement("div");
     const title = document.createElement("p");
     title.className = "parent-video-title";
     title.textContent = video.title;
     const url = document.createElement("p");
     url.className = "parent-video-url";
     url.textContent = video.youtubeUrl;
-    text.append(title, url);
-    main.append(icon, text);
 
     const actions = document.createElement("div");
     actions.className = "parent-video-actions";
@@ -217,7 +205,7 @@ function renderParent() {
       makeSmallButton("Delete", () => deleteVideo(video.id), false, "danger-action")
     );
 
-    item.append(main, actions);
+    item.append(title, url, actions);
     els.parentVideoList.append(item);
   });
 }
@@ -250,16 +238,11 @@ function makeVideoTile(video) {
   button.className = "video-tile";
   button.setAttribute("aria-label", video.title);
 
-  const icon = document.createElement("span");
-  icon.className = "tile-icon";
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = video.icon;
-
   const title = document.createElement("span");
   title.className = "tile-title";
   title.textContent = video.title;
 
-  button.append(icon, title);
+  button.append(title);
   button.addEventListener("click", () => {
     speak(video.title);
     openPlayer(video.id);
@@ -287,7 +270,6 @@ function saveSettingsFromForm() {
 function addVideoFromForm(event) {
   event.preventDefault();
   const title = els.videoTitle.value.trim();
-  const icon = els.videoIcon.value.trim() || "▶";
   const url = els.videoUrl.value.trim();
   const result = parseYouTubeUrl(url);
 
@@ -309,7 +291,6 @@ function addVideoFromForm(event) {
   state.videos.push({
     id: result.id,
     title,
-    icon,
     youtubeUrl: url,
     embedUrl: buildEmbedUrl(result.id, false),
     favorite: "false"
@@ -566,6 +547,7 @@ function parseToml(text) {
       if (!["title", "url", "icon", "favorite"].includes(key)) {
         return failToml(lineNumber, `Unknown video value "${key}".`);
       }
+      // Legacy icon values are accepted but ignored: videos no longer have icons.
       currentVideo[key] = value;
     }
   }
@@ -590,7 +572,6 @@ function parseToml(text) {
     nextState.videos[index] = {
       id: parsedUrl.id,
       title: video.title,
-      icon: video.icon || "▶",
       youtubeUrl: video.url,
       embedUrl: buildEmbedUrl(parsedUrl.id, false),
       favorite: video.favorite === "true" ? "true" : "false"
@@ -621,7 +602,6 @@ function writeToml(currentState) {
       "[[videos]]",
       `title = "${escapeTomlString(video.title)}"`,
       `url = "${escapeTomlString(video.youtubeUrl)}"`,
-      `icon = "${escapeTomlString(video.icon)}"`,
       `favorite = "${escapeTomlString(video.favorite)}"`
     );
   });
