@@ -105,7 +105,7 @@ function bindEvents() {
   els.importTomlButton.addEventListener("click", importTomlFromTextarea);
   els.copyTomlButton.addEventListener("click", copyToml);
   els.downloadTomlButton.addEventListener("click", downloadToml);
-  els.keepButton.addEventListener("click", keepCurrentVideo);
+  els.keepButton.addEventListener("click", toggleCurrentFavorite);
   els.againButton.addEventListener("click", playCurrentAgain);
   els.playerHomeButton.addEventListener("click", returnToKidMode);
   els.stopButton.addEventListener("click", stopPlayer);
@@ -318,6 +318,7 @@ function clearAllVideos() {
 function openPlayer(id) {
   currentVideoId = id;
   showScreen("player");
+  updateFavoriteButton();
 
   // Wait for the tile label before starting the video, so the two audio cues do not compete.
   speak(findVideo(id).title, () => {
@@ -335,6 +336,7 @@ function renderPlayer(autoplay) {
   }
 
   els.playerFrameWrap.innerHTML = "";
+  updateFavoriteButton();
   const iframe = document.createElement("iframe");
   iframe.title = video.title;
   // Keep the remote player inside this frame: no fullscreen, popups, sharing, or top-level navigation.
@@ -345,12 +347,27 @@ function renderPlayer(autoplay) {
   els.playerFrameWrap.append(iframe);
 }
 
-function keepCurrentVideo() {
+function toggleCurrentFavorite() {
   const video = findVideo(currentVideoId);
   if (!video) return;
-  video.favorite = "true";
+  const isFavorite = video.favorite === "true";
+  video.favorite = isFavorite ? "false" : "true";
   saveState();
-  speak("saved");
+  updateFavoriteButton();
+  speak(isFavorite ? "remove" : "keep");
+}
+
+function updateFavoriteButton() {
+  const video = findVideo(currentVideoId);
+  const isFavorite = Boolean(video && video.favorite === "true");
+  const label = isFavorite ? "Remove" : "Keep";
+  els.keepButton.firstChild.textContent = isFavorite ? "♥" : "♡";
+  els.keepButton.querySelector("span").textContent = label;
+  els.keepButton.setAttribute("aria-pressed", String(isFavorite));
+  els.keepButton.setAttribute(
+    "aria-label",
+    isFavorite ? "Remove from favorites" : "Keep as favorite"
+  );
 }
 
 function playCurrentAgain() {
