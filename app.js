@@ -2,6 +2,7 @@
 
 const STORAGE_KEY = "repeat.runtimeState.v1";
 const MAX_TITLE_LENGTH = 48;
+let storageWarning = "";
 const DEFAULT_STATE = {
   settings: {
     unlockCode: "2468",
@@ -41,6 +42,7 @@ const els = {
   settingTheme: document.getElementById("settingTheme"),
   saveSettingsButton: document.getElementById("saveSettingsButton"),
   settingsMessage: document.getElementById("settingsMessage"),
+  storageMessage: document.getElementById("storageMessage"),
   addVideoForm: document.getElementById("addVideoForm"),
   videoTitle: document.getElementById("videoTitle"),
   videoUrl: document.getElementById("videoUrl"),
@@ -145,19 +147,32 @@ function openParentUnlock(returnScreen) {
 }
 
 function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  let saved;
+  try {
+    saved = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    storageWarning = "Storage is unavailable. Changes will be lost when this page closes.";
+    return cloneDefaultState();
+  }
+
   if (!saved) return cloneDefaultState();
 
   try {
     const parsed = JSON.parse(saved);
     return normalizeState(parsed);
   } catch {
+    storageWarning = "Saved data could not be read. Repeat started with an empty library.";
     return cloneDefaultState();
   }
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    storageWarning = "";
+  } catch {
+    storageWarning = "Storage is unavailable. Changes will be lost when this page closes.";
+  }
   renderAll();
 }
 
@@ -205,6 +220,7 @@ function renderParent() {
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;
   els.exportToml.value = writeToml(state);
+  els.storageMessage.textContent = storageWarning;
 
   els.parentVideoList.innerHTML = "";
   els.emptyParentMessage.hidden = state.videos.length > 0;
@@ -574,8 +590,15 @@ function copyToml() {
 function fallbackCopyToml() {
   els.exportToml.focus();
   els.exportToml.select();
-  document.execCommand("copy");
-  setMessage(els.tomlMessage, "TOML copied.");
+  try {
+    const copied = document.execCommand("copy");
+    setMessage(
+      els.tomlMessage,
+      copied ? "TOML copied." : "Copy did not work. Select the TOML and copy it manually."
+    );
+  } catch {
+    setMessage(els.tomlMessage, "Copy did not work. Select the TOML and copy it manually.");
+  }
 }
 
 function downloadToml() {
@@ -602,6 +625,9 @@ function parseToml(text) {
   nextState.videos = [];
   let section = null;
   let currentVideo = null;
+  let hasSettingsSection = false;
+  const settingsKeys = new Set();
+  let videoKeys = new Set();
 
   const lines = text.split(/\r?\n/);
   for (let index = 0; index < lines.length; index += 1) {
@@ -610,6 +636,10 @@ function parseToml(text) {
     if (!line || line.startsWith("#")) continue;
 
     if (line === "[settings]") {
+      if (hasSettingsSection) {
+        return failToml(lineNumber, "The [settings] section can only appear once.");
+      }
+      hasSettingsSection = true;
       section = "settings";
       currentVideo = null;
       continue;
@@ -618,6 +648,7 @@ function parseToml(text) {
     if (line === "[[videos]]") {
       section = "videos";
       currentVideo = {};
+      videoKeys = new Set();
       nextState.videos.push(currentVideo);
       continue;
     }
@@ -639,12 +670,20 @@ function parseToml(text) {
     const value = stringResult.value;
 
     if (section === "settings") {
+      if (settingsKeys.has(key)) {
+        return failToml(lineNumber, `Duplicate setting "${key}".`);
+      }
+      settingsKeys.add(key);
       if (key === "continuousLoop") continue;
       if (!(key in nextState.settings)) {
         return failToml(lineNumber, `Unknown setting "${key}".`);
       }
       nextState.settings[key] = value;
     } else {
+      if (videoKeys.has(key)) {
+        return failToml(lineNumber, `Duplicate video value "${key}".`);
+      }
+      videoKeys.add(key);
       if (!["title", "url", "icon", "favorite"].includes(key)) {
         return failToml(lineNumber, `Unknown video value "${key}".`);
       }
