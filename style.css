@@ -518,12 +518,17 @@ textarea {
   }
 }
 
-@media (orientation: landscape) and (max-height: 600px) {
+@media (orientation: landscape) {
+  .app-shell:fullscreen:has(.player-layout.active) {
+    overflow: hidden;
+  }
+
+  .app-shell:fullscreen .player-layout,
   .player-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(112px, 22%);
     gap: 12px;
-    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
     min-height: 0;
   }
 
