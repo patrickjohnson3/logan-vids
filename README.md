@@ -26,7 +26,7 @@ For normal video playback and thumbnails, the device needs network access to You
 2. Enter the default unlock code: `2468`.
 3. Add a title and an individual YouTube video URL.
 4. Use **Up**, **Down**, and **Delete** to curate the stable Kid Mode grid.
-5. Adjust the unlock code, speech feedback, speech rate, and theme in Settings.
+5. Adjust the unlock code, speech feedback, YouTube controls, speech rate, and theme in Settings.
 
 Kid Mode has a small **Parent** button. It opens the code prompt; it does not exit Kid Mode directly. Cancelling that prompt returns to Kid Mode.
 
@@ -70,6 +70,7 @@ Example:
 [settings]
 unlockCode = "2468"
 audioFeedback = "true"
+youtubeControls = "false"
 speechRate = "0.9"
 theme = "dark"
 

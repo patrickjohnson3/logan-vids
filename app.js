@@ -18,6 +18,7 @@ const DEFAULT_STATE = {
   settings: {
     unlockCode: "2468",
     audioFeedback: "true",
+    youtubeControls: "false",
     speechRate: "0.9",
     theme: "dark"
   },
@@ -49,6 +50,7 @@ const els = {
   unlockMessage: document.getElementById("unlockMessage"),
   settingCode: document.getElementById("settingCode"),
   settingAudioFeedback: document.getElementById("settingAudioFeedback"),
+  settingYouTubeControls: document.getElementById("settingYouTubeControls"),
   settingSpeechRate: document.getElementById("settingSpeechRate"),
   speechRateOutput: document.getElementById("speechRateOutput"),
   settingTheme: document.getElementById("settingTheme"),
@@ -248,6 +250,7 @@ function applyTheme() {
 function renderParent() {
   els.settingCode.value = state.settings.unlockCode;
   els.settingAudioFeedback.checked = state.settings.audioFeedback === "true";
+  els.settingYouTubeControls.checked = state.settings.youtubeControls === "true";
   els.settingSpeechRate.value = state.settings.speechRate;
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;
@@ -333,6 +336,7 @@ function saveSettingsFromForm() {
   const nextSettings = {
     unlockCode: els.settingCode.value.trim(),
     audioFeedback: String(els.settingAudioFeedback.checked),
+    youtubeControls: String(els.settingYouTubeControls.checked),
     speechRate: els.settingSpeechRate.value,
     theme: els.settingTheme.value
   };
@@ -438,7 +442,11 @@ function startCurrentPlayer(autoplay) {
   iframe.allow = "autoplay; encrypted-media";
   iframe.sandbox = "allow-scripts allow-same-origin";
   iframe.referrerPolicy = "strict-origin-when-cross-origin";
-  iframe.src = buildEmbedUrl(video.id, autoplay);
+  iframe.src = buildEmbedUrl(
+    video.id,
+    autoplay,
+    state.settings.youtubeControls === "true"
+  );
   els.playerFrameWrap.append(iframe);
 }
 
@@ -566,14 +574,18 @@ function validateVideoId(id) {
   return { ok: true, id };
 }
 
-function buildEmbedUrl(id, autoplay = false) {
+function buildEmbedUrl(id, autoplay = false, controlsEnabled = true) {
   const params = new URLSearchParams({
     rel: "0",
     playsinline: "1",
-    controls: "1",
+    controls: controlsEnabled ? "1" : "0",
     loop: "1",
     playlist: id
   });
+
+  if (!controlsEnabled) {
+    params.set("disablekb", "1");
+  }
 
   if (autoplay) {
     params.set("autoplay", "1");
@@ -837,6 +849,10 @@ function validateSettings(settings) {
     return "Settings: audioFeedback must be \"true\" or \"false\".";
   }
 
+  if (!/^(true|false)$/.test(settings.youtubeControls)) {
+    return "Settings: youtubeControls must be \"true\" or \"false\".";
+  }
+
   const speechRate = Number(settings.speechRate);
   if (!Number.isFinite(speechRate) || speechRate < 0.6 || speechRate > 1.2) {
     return "Settings: speechRate must be between 0.6 and 1.2.";
@@ -859,6 +875,7 @@ function writeToml(currentState) {
     "[settings]",
     `unlockCode = "${escapeTomlString(currentState.settings.unlockCode)}"`,
     `audioFeedback = "${escapeTomlString(currentState.settings.audioFeedback)}"`,
+    `youtubeControls = "${escapeTomlString(currentState.settings.youtubeControls)}"`,
     `speechRate = "${escapeTomlString(currentState.settings.speechRate)}"`,
     `theme = "${escapeTomlString(currentState.settings.theme)}"`
   ];
