@@ -42,6 +42,7 @@ const screens = {
 const els = {
   app: document.getElementById("app"),
   kidModeButton: document.getElementById("kidModeButton"),
+  kidTitle: document.getElementById("kidTitle"),
   parentModeButton: document.getElementById("parentModeButton"),
   kidParentButton: document.getElementById("kidParentButton"),
   unlockBackButton: document.getElementById("unlockBackButton"),
@@ -96,7 +97,7 @@ function init() {
 function bindEvents() {
   els.kidModeButton.addEventListener("click", () => {
     requestKidFullscreen();
-    speak("choose");
+    speak(els.kidTitle.textContent);
     showScreen("kid");
   });
 
