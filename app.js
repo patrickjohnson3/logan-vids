@@ -355,7 +355,10 @@ function makeVideoTile(video) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "video-tile";
-  button.setAttribute("aria-label", video.title);
+  button.setAttribute(
+    "aria-label",
+    video.favorite === "true" ? `${video.title}, favorite` : video.title
+  );
 
   const thumbnail = document.createElement("img");
   thumbnail.className = "video-thumbnail";
@@ -369,6 +372,13 @@ function makeVideoTile(video) {
   title.textContent = video.title;
 
   button.append(thumbnail, title);
+  if (video.favorite === "true") {
+    const badge = document.createElement("span");
+    badge.className = "favorite-badge";
+    badge.setAttribute("aria-hidden", "true");
+    badge.textContent = "❤️";
+    button.append(badge);
+  }
   button.addEventListener("click", () => {
     openPlayer(video.id);
   });

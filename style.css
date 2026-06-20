@@ -366,6 +366,7 @@ textarea {
 
 .video-tile {
   display: grid;
+  position: relative;
   grid-template-rows: minmax(0, 1fr) 2.8rem;
   min-height: 150px;
   align-items: center;
@@ -385,6 +386,20 @@ textarea {
 
 .video-thumbnail.unavailable {
   opacity: 0;
+}
+
+.favorite-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .video-tile .tile-title {
@@ -460,10 +475,6 @@ textarea {
   .player-button {
     transition: none;
   }
-}
-
-.stop {
-  border-color: var(--danger);
 }
 
 @media (min-width: 680px) {
