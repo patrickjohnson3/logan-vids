@@ -73,9 +73,9 @@ const els = {
   copyTomlButton: document.getElementById("copyTomlButton"),
   downloadTomlButton: document.getElementById("downloadTomlButton"),
   tomlMessage: document.getElementById("tomlMessage"),
+  favoritesSection: document.getElementById("favoritesSection"),
   favoritesRow: document.getElementById("favoritesRow"),
   kidVideoGrid: document.getElementById("kidVideoGrid"),
-  emptyFavoritesMessage: document.getElementById("emptyFavoritesMessage"),
   emptyKidMessage: document.getElementById("emptyKidMessage"),
   playerFrameWrap: document.getElementById("playerFrameWrap"),
   keepButton: document.getElementById("keepButton"),
@@ -290,7 +290,7 @@ function renderKid() {
   els.kidVideoGrid.innerHTML = "";
 
   const favorites = state.videos.filter((video) => video.favorite === "true");
-  els.emptyFavoritesMessage.hidden = favorites.length > 0;
+  els.favoritesSection.hidden = favorites.length === 0;
   els.emptyKidMessage.hidden = state.videos.length > 0;
 
   favorites.forEach((video) => els.favoritesRow.append(makeVideoTile(video)));
@@ -460,18 +460,18 @@ function toggleCurrentFavorite() {
     currentVideo.favorite = isFavorite ? "false" : "true";
   });
   renderPlayerControls(findVideo(currentVideoId));
-  speak(isFavorite ? "remove" : "keep");
+  speak(isFavorite ? "remove" : "favorites");
 }
 
 function renderPlayerControls(video) {
   const isFavorite = Boolean(video && video.favorite === "true");
-  const label = isFavorite ? "Remove" : "Keep";
+  const label = isFavorite ? "Remove" : "Favorites";
   els.keepButton.firstChild.textContent = isFavorite ? "♥" : "♡";
   els.keepButton.querySelector("span").textContent = label;
   els.keepButton.setAttribute("aria-pressed", String(isFavorite));
   els.keepButton.setAttribute(
     "aria-label",
-    isFavorite ? "Remove from favorites" : "Keep as favorite"
+    isFavorite ? "Remove from favorites" : "Add to favorites"
   );
 }
 

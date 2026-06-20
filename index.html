@@ -131,10 +131,9 @@
           <h2 id="kidTitle">What would you like to watch?</h2>
           <button id="kidParentButton" class="quiet-link" type="button">Parent</button>
         </div>
-        <section aria-labelledby="favoritesTitle">
+        <section id="favoritesSection" aria-labelledby="favoritesTitle">
           <h3 id="favoritesTitle">Favorites</h3>
           <div id="favoritesRow" class="favorites-row"></div>
-          <p id="emptyFavoritesMessage" class="empty-note">No favorites yet.</p>
         </section>
         <section aria-labelledby="approvedTitle">
           <h3 id="approvedTitle" class="sr-only">Videos</h3>
@@ -147,7 +146,7 @@
         <h2 id="playerTitle" class="sr-only">Player</h2>
         <div id="playerFrameWrap" class="player-frame-wrap"></div>
         <div class="player-controls" aria-label="Player controls">
-          <button id="keepButton" class="player-button" type="button" aria-pressed="false">♡<span>Keep</span></button>
+          <button id="keepButton" class="player-button" type="button" aria-pressed="false">♡<span>Favorites</span></button>
           <button id="againButton" class="player-button" type="button">🔁<span>Again</span></button>
           <button id="playerHomeButton" class="player-button" type="button">🏠<span>Home</span></button>
           <button id="stopButton" class="player-button stop" type="button">⏹<span>Stop</span></button>
