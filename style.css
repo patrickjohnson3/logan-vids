@@ -8,6 +8,7 @@
   --line: #3a453e;
   --accent: #92d6b2;
   --accent-2: #f0c879;
+  --favorite: #e05252;
   --danger: #f09c8e;
   --shadow: rgba(0, 0, 0, 0.26);
 }
@@ -22,6 +23,7 @@ body.light {
   --line: #cfc6b7;
   --accent: #3f8060;
   --accent-2: #8a6826;
+  --favorite: #b93131;
   --danger: #9e3e32;
   --shadow: rgba(47, 39, 27, 0.14);
 }
@@ -432,11 +434,32 @@ textarea {
   gap: 8px;
   border-radius: 8px;
   font-size: 2rem;
+  transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
 }
 
-.player-button span {
+.player-button:active {
+  transform: scale(0.97);
+  background: var(--surface);
+  box-shadow: inset 0 3px 8px var(--shadow);
+}
+
+.player-button .player-button-label {
   font-size: 1.2rem;
   font-weight: 800;
+}
+
+.favorite-icon {
+  color: var(--muted);
+}
+
+.player-button[aria-pressed="true"] .favorite-icon {
+  color: var(--favorite);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-button {
+    transition: none;
+  }
 }
 
 .stop {

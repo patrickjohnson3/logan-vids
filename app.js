@@ -539,8 +539,8 @@ function toggleCurrentFavorite() {
 function renderPlayerControls(video) {
   const isFavorite = Boolean(video && video.favorite === "true");
   const label = isFavorite ? "Remove" : "Favorites";
-  els.keepButton.firstChild.textContent = isFavorite ? "♥" : "♡";
-  els.keepButton.querySelector("span").textContent = label;
+  els.keepButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";
+  els.keepButton.querySelector(".player-button-label").textContent = label;
   els.keepButton.setAttribute("aria-pressed", String(isFavorite));
   els.keepButton.setAttribute(
     "aria-label",
