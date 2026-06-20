@@ -30,6 +30,7 @@ let state = loadState();
 let currentVideoId = null;
 let unlockReturnScreen = "home";
 let speechPlaybackToken = 0;
+let editingVideoId = null;
 
 const screens = {
   home: document.getElementById("homeScreen"),
@@ -272,9 +273,16 @@ function renderParent() {
     url.className = "parent-video-url";
     url.textContent = video.youtubeUrl;
 
+    if (editingVideoId === video.id) {
+      item.append(url, makeVideoTitleEditor(video));
+      els.parentVideoList.append(item);
+      return;
+    }
+
     const actions = document.createElement("div");
     actions.className = "parent-video-actions";
     actions.append(
+      makeSmallButton("Edit", () => startEditingVideo(video.id)),
       makeSmallButton("Up", () => moveVideo(index, -1), index === 0),
       makeSmallButton("Down", () => moveVideo(index, 1), index === state.videos.length - 1),
       makeSmallButton("Delete", () => deleteVideo(video.id), false, "danger-action")
@@ -283,6 +291,42 @@ function renderParent() {
     item.append(title, url, actions);
     els.parentVideoList.append(item);
   });
+}
+
+function makeVideoTitleEditor(video) {
+  const form = document.createElement("form");
+  form.className = "parent-video-edit";
+
+  const label = document.createElement("label");
+  label.textContent = "Title";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = video.title;
+  input.maxLength = MAX_TITLE_LENGTH;
+  input.required = true;
+  input.addEventListener("input", () => input.setCustomValidity(""));
+  label.append(input);
+
+  const actions = document.createElement("div");
+  actions.className = "parent-video-edit-actions";
+  const saveButton = document.createElement("button");
+  saveButton.type = "submit";
+  saveButton.className = "primary-action";
+  saveButton.textContent = "Save";
+  actions.append(
+    saveButton,
+    makeSmallButton("Cancel", () => {
+      editingVideoId = null;
+      renderParent();
+    })
+  );
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveVideoTitle(video.id, input);
+  });
+  form.append(label, actions);
+  return form;
 }
 
 function renderKid() {
@@ -403,6 +447,7 @@ function moveVideo(index, direction) {
 }
 
 function deleteVideo(id) {
+  if (editingVideoId === id) editingVideoId = null;
   updateState((draft) => {
     draft.videos = draft.videos.filter((video) => video.id !== id);
   });
@@ -410,8 +455,36 @@ function deleteVideo(id) {
 
 function clearAllVideos() {
   if (!confirm("Clear all saved videos?")) return;
+  editingVideoId = null;
   updateState((draft) => {
     draft.videos = [];
+  });
+}
+
+function startEditingVideo(id) {
+  editingVideoId = id;
+  renderParent();
+  els.parentVideoList.querySelector("input")?.focus();
+}
+
+function saveVideoTitle(id, input) {
+  const title = input.value.trim();
+  if (!title) {
+    input.setCustomValidity("Add a title.");
+    input.reportValidity();
+    return;
+  }
+
+  if (title.length > MAX_TITLE_LENGTH) {
+    input.setCustomValidity(`Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`);
+    input.reportValidity();
+    return;
+  }
+
+  editingVideoId = null;
+  updateState((draft) => {
+    const video = draft.videos.find((item) => item.id === id);
+    if (video) video.title = title;
   });
 }
 

@@ -312,13 +312,28 @@ textarea {
 
 .parent-video-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
 .parent-video-actions button {
   min-height: 52px;
   border-radius: 8px;
+}
+
+.parent-video-edit {
+  display: grid;
+  gap: 10px;
+}
+
+.parent-video-edit-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.parent-video-edit-actions button {
+  min-height: 52px;
 }
 
 .kid-layout {
