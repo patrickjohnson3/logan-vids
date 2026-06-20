@@ -94,3 +94,14 @@ No dependencies are needed. To check JavaScript syntax:
 ```bash
 node --check app.js
 ```
+
+## Manual browser checks
+
+Before sharing a build, verify these flows in Android Chrome:
+
+1. Enter Kid Mode and confirm fullscreen starts; open Parent Mode and confirm fullscreen exits.
+2. Add a valid watch URL, then confirm its thumbnail, speech prompt, autoplay, repeat, and stop controls work.
+3. Toggle Keep/Remove and confirm the favorite row updates after returning to Kid Mode.
+4. Import a valid TOML file, cancel the replacement warning once, then confirm a second import replaces settings, videos, and favorites.
+5. Import TOML with a duplicate key, invalid setting, invalid URL, and overlong title; each must show an error without changing saved data.
+6. Download, copy, and upload `safe-loop-config.toml`, then confirm the configuration round-trips correctly.

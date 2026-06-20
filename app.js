@@ -2,6 +2,17 @@
 
 const STORAGE_KEY = "repeat.runtimeState.v1";
 const MAX_TITLE_LENGTH = 48;
+const MAX_TOML_FILE_BYTES = 256 * 1024;
+const MESSAGES = {
+  storageUnavailable: "Storage is unavailable. Changes will be lost when this page closes.",
+  storageUnreadable: "Saved data could not be read. Repeat started with an empty library.",
+  importConfirmation: "Importing TOML replaces all saved videos, favorites, and settings. Continue?",
+  importCancelled: "Import cancelled.",
+  importSessionOnly: "TOML imported for this session, but it could not be saved.",
+  unreadableFile: "That file could not be read.",
+  fileTooLarge: "Choose a TOML file smaller than 256 KB.",
+  copyFailed: "Copy did not work. Select the TOML and copy it manually."
+};
 let storageWarning = "";
 const DEFAULT_STATE = {
   settings: {
@@ -13,6 +24,7 @@ const DEFAULT_STATE = {
   videos: []
 };
 
+// Runtime state and DOM references stay together; pure parsing helpers are below.
 let state = loadState();
 let currentVideoId = null;
 let unlockReturnScreen = "home";
@@ -71,6 +83,7 @@ const els = {
 
 init();
 
+// Startup and event wiring
 function init() {
   applyTheme();
   bindEvents();
@@ -150,12 +163,13 @@ function openParentUnlock(returnScreen) {
   els.unlockCode.focus();
 }
 
+// State and persistence
 function loadState() {
   let saved;
   try {
     saved = localStorage.getItem(STORAGE_KEY);
   } catch {
-    storageWarning = "Storage is unavailable. Changes will be lost when this page closes.";
+    storageWarning = MESSAGES.storageUnavailable;
     return cloneDefaultState();
   }
 
@@ -165,22 +179,32 @@ function loadState() {
     const parsed = JSON.parse(saved);
     return normalizeState(parsed);
   } catch {
-    storageWarning = "Saved data could not be read. Repeat started with an empty library.";
+    storageWarning = MESSAGES.storageUnreadable;
     return cloneDefaultState();
   }
 }
 
-function saveState() {
+function persistState() {
   let persisted = true;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     storageWarning = "";
   } catch {
     persisted = false;
-    storageWarning = "Storage is unavailable. Changes will be lost when this page closes.";
+    storageWarning = MESSAGES.storageUnavailable;
   }
   renderAll();
   return persisted;
+}
+
+function updateState(mutator) {
+  mutator(state);
+  return persistState();
+}
+
+function replaceState(nextState) {
+  state = nextState;
+  return persistState();
 }
 
 function cloneDefaultState() {
@@ -210,6 +234,7 @@ function normalizeState(raw) {
   return normalized;
 }
 
+// Rendering
 function renderAll() {
   applyTheme();
   renderParent();
@@ -303,19 +328,24 @@ function makeVideoTile(video) {
   return button;
 }
 
+// Parent actions
 function saveSettingsFromForm() {
-  const code = els.settingCode.value.trim();
-  if (!/^\d{4,12}$/.test(code)) {
-    setMessage(els.settingsMessage, "Use a numeric code with 4 to 12 digits.");
+  const nextSettings = {
+    unlockCode: els.settingCode.value.trim(),
+    audioFeedback: String(els.settingAudioFeedback.checked),
+    speechRate: els.settingSpeechRate.value,
+    theme: els.settingTheme.value
+  };
+  const settingsError = validateSettings(nextSettings);
+  if (settingsError) {
+    setMessage(els.settingsMessage, settingsError.replace("Settings: ", ""));
     return;
   }
 
-  state.settings.unlockCode = code;
-  state.settings.audioFeedback = String(els.settingAudioFeedback.checked);
-  state.settings.speechRate = els.settingSpeechRate.value;
-  state.settings.theme = els.settingTheme.value;
-  saveState();
-  setMessage(els.settingsMessage, "Settings saved.");
+  const persisted = updateState((draft) => {
+    draft.settings = nextSettings;
+  });
+  setMessage(els.settingsMessage, persisted ? "Settings saved." : MESSAGES.storageUnavailable);
 }
 
 function addVideoFromForm(event) {
@@ -344,56 +374,64 @@ function addVideoFromForm(event) {
     return;
   }
 
-  state.videos.push({
-    id: result.id,
-    title,
-    youtubeUrl: url,
-    embedUrl: buildEmbedUrl(result.id),
-    favorite: "false"
+  updateState((draft) => {
+    draft.videos.push({
+      id: result.id,
+      title,
+      youtubeUrl: url,
+      embedUrl: buildEmbedUrl(result.id),
+      favorite: "false"
+    });
   });
 
   els.addVideoForm.reset();
-  saveState();
   setMessage(els.addVideoMessage, "Video added.");
 }
 
 function moveVideo(index, direction) {
   const nextIndex = index + direction;
   if (nextIndex < 0 || nextIndex >= state.videos.length) return;
-  const [video] = state.videos.splice(index, 1);
-  state.videos.splice(nextIndex, 0, video);
-  saveState();
+  updateState((draft) => {
+    const [video] = draft.videos.splice(index, 1);
+    draft.videos.splice(nextIndex, 0, video);
+  });
 }
 
 function deleteVideo(id) {
-  state.videos = state.videos.filter((video) => video.id !== id);
-  saveState();
+  updateState((draft) => {
+    draft.videos = draft.videos.filter((video) => video.id !== id);
+  });
 }
 
 function clearAllVideos() {
   if (!confirm("Clear all saved videos?")) return;
-  state.videos = [];
-  saveState();
+  updateState((draft) => {
+    draft.videos = [];
+  });
 }
 
+// Player lifecycle
 function openPlayer(id) {
-  currentVideoId = id;
+  const video = findVideo(id);
+  if (!video) return;
+
+  currentVideoId = video.id;
   showScreen("player");
-  updateFavoriteButton();
+  renderPlayerControls(video);
 
   // Wait for the tile label before starting the video, so the two audio cues do not compete.
-  speakThenPlay(findVideo(id).title, id);
+  startPlayerAfterSpeech(video.title, video.id);
 }
 
-function renderPlayer(autoplay) {
+function startCurrentPlayer(autoplay) {
   const video = findVideo(currentVideoId);
   if (!video) {
-    returnToKidMode();
+    leavePlayer();
     return;
   }
 
   els.playerFrameWrap.innerHTML = "";
-  updateFavoriteButton();
+  renderPlayerControls(video);
   const iframe = document.createElement("iframe");
   iframe.title = video.title;
   // Keep the remote player inside this frame: no fullscreen, popups, sharing, or top-level navigation.
@@ -408,14 +446,15 @@ function toggleCurrentFavorite() {
   const video = findVideo(currentVideoId);
   if (!video) return;
   const isFavorite = video.favorite === "true";
-  video.favorite = isFavorite ? "false" : "true";
-  saveState();
-  updateFavoriteButton();
+  updateState((draft) => {
+    const currentVideo = draft.videos.find((item) => item.id === currentVideoId);
+    currentVideo.favorite = isFavorite ? "false" : "true";
+  });
+  renderPlayerControls(findVideo(currentVideoId));
   speak(isFavorite ? "remove" : "keep");
 }
 
-function updateFavoriteButton() {
-  const video = findVideo(currentVideoId);
+function renderPlayerControls(video) {
   const isFavorite = Boolean(video && video.favorite === "true");
   const label = isFavorite ? "Remove" : "Keep";
   els.keepButton.firstChild.textContent = isFavorite ? "♥" : "♡";
@@ -428,10 +467,10 @@ function updateFavoriteButton() {
 }
 
 function playCurrentAgain() {
-  speakThenPlay("again", currentVideoId);
+  startPlayerAfterSpeech("again", currentVideoId);
 }
 
-function speakThenPlay(text, videoId) {
+function startPlayerAfterSpeech(text, videoId) {
   const playbackToken = ++speechPlaybackToken;
   const startPlayer = once(() => {
     if (
@@ -439,7 +478,7 @@ function speakThenPlay(text, videoId) {
       currentVideoId === videoId &&
       screens.player.classList.contains("active")
     ) {
-      renderPlayer(true);
+      startCurrentPlayer(true);
     }
   });
 
@@ -458,22 +497,25 @@ function estimateSpeechTimeout(text) {
   return Math.min(Math.max(milliseconds, 3000), 12000);
 }
 
-function returnToKidMode() {
+function leavePlayer() {
   els.playerFrameWrap.innerHTML = "";
   currentVideoId = null;
   showScreen("kid");
 }
 
+function returnToKidMode() {
+  leavePlayer();
+}
+
 function stopPlayer() {
-  els.playerFrameWrap.innerHTML = "";
-  currentVideoId = null;
-  showScreen("kid");
+  leavePlayer();
 }
 
 function findVideo(id) {
   return state.videos.find((video) => video.id === id);
 }
 
+// YouTube and speech helpers
 function parseYouTubeUrl(value) {
   let url;
   try {
@@ -569,6 +611,7 @@ function once(callback) {
   };
 }
 
+// TOML input and output
 function importTomlFromTextarea() {
   importToml(els.importToml.value);
 }
@@ -577,12 +620,18 @@ async function importTomlFromFile(event) {
   const [file] = event.target.files;
   if (!file) return;
 
+  if (file.size > MAX_TOML_FILE_BYTES) {
+    setMessage(els.tomlMessage, MESSAGES.fileTooLarge);
+    event.target.value = "";
+    return;
+  }
+
   try {
     const text = await file.text();
     els.importToml.value = text;
     importToml(text);
   } catch {
-    setMessage(els.tomlMessage, "That file could not be read.");
+    setMessage(els.tomlMessage, MESSAGES.unreadableFile);
   } finally {
     event.target.value = "";
   }
@@ -595,16 +644,15 @@ function importToml(text) {
     return;
   }
 
-  if (!confirm("Importing TOML replaces all saved videos, favorites, and settings. Continue?")) {
-    setMessage(els.tomlMessage, "Import cancelled.");
+  if (!confirm(MESSAGES.importConfirmation)) {
+    setMessage(els.tomlMessage, MESSAGES.importCancelled);
     return;
   }
 
-  state = result.state;
-  const persisted = saveState();
+  const persisted = replaceState(result.state);
   setMessage(
     els.tomlMessage,
-    persisted ? "TOML imported." : "TOML imported for this session, but it could not be saved."
+    persisted ? "TOML imported." : MESSAGES.importSessionOnly
   );
 }
 
@@ -629,10 +677,10 @@ function fallbackCopyToml() {
     const copied = document.execCommand("copy");
     setMessage(
       els.tomlMessage,
-      copied ? "TOML copied." : "Copy did not work. Select the TOML and copy it manually."
+      copied ? "TOML copied." : MESSAGES.copyFailed
     );
   } catch {
-    setMessage(els.tomlMessage, "Copy did not work. Select the TOML and copy it manually.");
+    setMessage(els.tomlMessage, MESSAGES.copyFailed);
   }
 }
 
@@ -688,21 +736,13 @@ function parseToml(text) {
       continue;
     }
 
-    const match = line.match(/^([A-Za-z][A-Za-z0-9_]*)\s*=\s*"((?:\\.|[^"\\])*)"$/);
-    if (!match) {
-      return failToml(lineNumber, "Use key = \"value\" with quoted string values.");
-    }
-
     if (!section) {
       return failToml(lineNumber, "Add [settings] or [[videos]] before values.");
     }
 
-    const key = match[1];
-    const stringResult = unescapeTomlString(match[2]);
-    if (!stringResult.ok) {
-      return failToml(lineNumber, "Only \\\" and \\\\ escapes are supported in strings.");
-    }
-    const value = stringResult.value;
+    const assignment = parseTomlAssignment(line, lineNumber);
+    if (!assignment.ok) return assignment;
+    const { key, value } = assignment;
 
     if (section === "settings") {
       if (settingsKeys.has(key)) {
@@ -727,14 +767,38 @@ function parseToml(text) {
     }
   }
 
-  const settingsError = validateImportedSettings(nextState.settings);
+  const settingsError = validateSettings(nextState.settings);
   if (settingsError) {
     return { ok: false, message: settingsError };
   }
 
+  const videosResult = normalizeImportedVideos(nextState.videos);
+  if (!videosResult.ok) return videosResult;
+  nextState.videos = videosResult.videos;
+
+  return { ok: true, state: normalizeState(nextState) };
+}
+
+function parseTomlAssignment(line, lineNumber) {
+  const match = line.match(/^([A-Za-z][A-Za-z0-9_]*)\s*=\s*"((?:\\.|[^"\\])*)"$/);
+  if (!match) {
+    return failToml(lineNumber, "Use key = \"value\" with quoted string values.");
+  }
+
+  const stringResult = unescapeTomlString(match[2]);
+  if (!stringResult.ok) {
+    return failToml(lineNumber, "Only \\\" and \\\\ escapes are supported in strings.");
+  }
+
+  return { ok: true, key: match[1], value: stringResult.value };
+}
+
+function normalizeImportedVideos(videos) {
   const importedIds = new Set();
-  for (let index = 0; index < nextState.videos.length; index += 1) {
-    const video = nextState.videos[index];
+  const normalizedVideos = [];
+
+  for (let index = 0; index < videos.length; index += 1) {
+    const video = videos[index];
     if (!video.title || !video.url) {
       return { ok: false, message: `Video ${index + 1} needs title and url values.` };
     }
@@ -753,19 +817,19 @@ function parseToml(text) {
     }
     importedIds.add(parsedUrl.id);
 
-    nextState.videos[index] = {
+    normalizedVideos.push({
       id: parsedUrl.id,
       title: video.title,
       youtubeUrl: video.url,
       embedUrl: buildEmbedUrl(parsedUrl.id),
       favorite: video.favorite === "true" ? "true" : "false"
-    };
+    });
   }
 
-  return { ok: true, state: normalizeState(nextState) };
+  return { ok: true, videos: normalizedVideos };
 }
 
-function validateImportedSettings(settings) {
+function validateSettings(settings) {
   if (!/^\d{4,12}$/.test(settings.unlockCode)) {
     return "Settings: unlockCode must contain 4 to 12 digits.";
   }
