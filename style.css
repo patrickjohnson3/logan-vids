@@ -523,8 +523,8 @@ textarea {
     overflow: hidden;
   }
 
-  .app-shell:fullscreen .player-layout,
-  .player-layout {
+  .app-shell:fullscreen .player-layout.active,
+  .player-layout.active {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(112px, 22%);
     gap: 12px;
