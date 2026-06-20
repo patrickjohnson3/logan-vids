@@ -171,13 +171,16 @@ function loadState() {
 }
 
 function saveState() {
+  let persisted = true;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     storageWarning = "";
   } catch {
+    persisted = false;
     storageWarning = "Storage is unavailable. Changes will be lost when this page closes.";
   }
   renderAll();
+  return persisted;
 }
 
 function cloneDefaultState() {
@@ -598,8 +601,11 @@ function importToml(text) {
   }
 
   state = result.state;
-  saveState();
-  setMessage(els.tomlMessage, "TOML imported.");
+  const persisted = saveState();
+  setMessage(
+    els.tomlMessage,
+    persisted ? "TOML imported." : "TOML imported for this session, but it could not be saved."
+  );
 }
 
 function copyToml() {
@@ -721,6 +727,11 @@ function parseToml(text) {
     }
   }
 
+  const settingsError = validateImportedSettings(nextState.settings);
+  if (settingsError) {
+    return { ok: false, message: settingsError };
+  }
+
   const importedIds = new Set();
   for (let index = 0; index < nextState.videos.length; index += 1) {
     const video = nextState.videos[index];
@@ -752,6 +763,27 @@ function parseToml(text) {
   }
 
   return { ok: true, state: normalizeState(nextState) };
+}
+
+function validateImportedSettings(settings) {
+  if (!/^\d{4,12}$/.test(settings.unlockCode)) {
+    return "Settings: unlockCode must contain 4 to 12 digits.";
+  }
+
+  if (!/^(true|false)$/.test(settings.audioFeedback)) {
+    return "Settings: audioFeedback must be \"true\" or \"false\".";
+  }
+
+  const speechRate = Number(settings.speechRate);
+  if (!Number.isFinite(speechRate) || speechRate < 0.6 || speechRate > 1.2) {
+    return "Settings: speechRate must be between 0.6 and 1.2.";
+  }
+
+  if (!/^(dark|light)$/.test(settings.theme)) {
+    return "Settings: theme must be \"dark\" or \"light\".";
+  }
+
+  return "";
 }
 
 function failToml(lineNumber, message) {
