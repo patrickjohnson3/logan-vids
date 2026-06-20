@@ -69,28 +69,26 @@ textarea:focus-visible {
   outline-offset: 3px;
 }
 
-.app-header {
-  display: flex;
-  justify-content: center;
-  padding: 18px 18px 8px;
+.app-shell {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 12px;
+}
+
+.parent-brand {
+  padding: 6px 0 18px;
   text-align: center;
 }
 
-.app-header h1 {
+.parent-brand h1 {
   margin: 0;
   font-size: 2rem;
   line-height: 1;
 }
 
-.app-header p {
+.parent-brand p {
   margin: 8px 0 0;
   color: var(--muted);
-}
-
-.app-shell {
-  width: min(100%, 980px);
-  margin: 0 auto;
-  padding: 12px;
 }
 
 .app-shell:fullscreen {
@@ -132,7 +130,7 @@ textarea:focus-visible {
 .home-actions {
   display: grid;
   gap: 16px;
-  min-height: calc(100vh - 120px);
+  min-height: calc(100vh - 24px);
   align-content: center;
 }
 
@@ -341,7 +339,7 @@ textarea {
 }
 
 .kid-layout {
-  min-height: calc(100vh - 96px);
+  min-height: calc(100vh - 24px);
 }
 
 .kid-topline {
@@ -424,7 +422,7 @@ textarea {
 }
 
 .player-layout {
-  min-height: calc(100vh - 96px);
+  min-height: calc(100vh - 24px);
 }
 
 .player-frame-wrap {

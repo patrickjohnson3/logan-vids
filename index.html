@@ -8,13 +8,6 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <header class="app-header" aria-label="Repeat header">
-      <div>
-        <h1>Repeat</h1>
-        <p>Calm local media</p>
-      </div>
-    </header>
-
     <main id="app" class="app-shell">
       <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
         <h2 id="homeTitle" class="sr-only">Home</h2>
@@ -42,6 +35,10 @@
       </section>
 
       <section id="parentScreen" class="screen parent-layout" aria-labelledby="parentTitle">
+        <header class="parent-brand">
+          <h1>Repeat</h1>
+          <p>Calm local media</p>
+        </header>
         <div class="screen-topline">
           <button class="quiet-link" data-go-home type="button">Home</button>
           <h2 id="parentTitle">Parent mode</h2>
