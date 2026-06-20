@@ -572,8 +572,7 @@ function buildEmbedUrl(id, autoplay = false) {
     playsinline: "1",
     controls: "1",
     loop: "1",
-    playlist: id,
-    modestbranding: "1"
+    playlist: id
   });
 
   if (autoplay) {
