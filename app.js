@@ -26,6 +26,7 @@ const screens = {
 };
 
 const els = {
+  app: document.getElementById("app"),
   kidModeButton: document.getElementById("kidModeButton"),
   parentModeButton: document.getElementById("parentModeButton"),
   kidParentButton: document.getElementById("kidParentButton"),
@@ -75,6 +76,7 @@ function init() {
 
 function bindEvents() {
   els.kidModeButton.addEventListener("click", () => {
+    requestKidFullscreen();
     speak("choose");
     showScreen("kid");
   });
@@ -114,10 +116,23 @@ function bindEvents() {
 }
 
 function showScreen(name) {
+  if (name === "home" || name === "unlock" || name === "parent") {
+    exitKidFullscreen();
+  }
   Object.values(screens).forEach((screen) => screen.classList.remove("active"));
   screens[name].classList.add("active");
   if (name === "parent") renderParent();
   if (name === "kid") renderKid();
+}
+
+function requestKidFullscreen() {
+  if (document.fullscreenElement || !els.app.requestFullscreen) return;
+  els.app.requestFullscreen().catch(() => {});
+}
+
+function exitKidFullscreen() {
+  if (!document.fullscreenElement || !document.exitFullscreen) return;
+  document.exitFullscreen().catch(() => {});
 }
 
 function openParentUnlock(returnScreen) {

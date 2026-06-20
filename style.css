@@ -91,6 +91,19 @@ textarea:focus-visible {
   padding: 12px;
 }
 
+.app-shell:fullscreen {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  padding: 12px;
+  background: var(--bg);
+}
+
+.app-shell:fullscreen .kid-layout,
+.app-shell:fullscreen .player-layout {
+  min-height: calc(100vh - 24px);
+}
+
 .screen {
   display: none;
 }
