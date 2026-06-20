@@ -518,7 +518,7 @@ textarea {
   }
 }
 
-@media (orientation: landscape) {
+@media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
   .app-shell:fullscreen:has(.player-layout.active) {
     overflow: hidden;
   }
