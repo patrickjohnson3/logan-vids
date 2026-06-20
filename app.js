@@ -53,6 +53,8 @@ const els = {
   importToml: document.getElementById("importToml"),
   exportToml: document.getElementById("exportToml"),
   importTomlButton: document.getElementById("importTomlButton"),
+  uploadTomlButton: document.getElementById("uploadTomlButton"),
+  tomlFileInput: document.getElementById("tomlFileInput"),
   copyTomlButton: document.getElementById("copyTomlButton"),
   downloadTomlButton: document.getElementById("downloadTomlButton"),
   tomlMessage: document.getElementById("tomlMessage"),
@@ -109,6 +111,8 @@ function bindEvents() {
   els.addVideoForm.addEventListener("submit", addVideoFromForm);
   els.clearAllButton.addEventListener("click", clearAllVideos);
   els.importTomlButton.addEventListener("click", importTomlFromTextarea);
+  els.uploadTomlButton.addEventListener("click", () => els.tomlFileInput.click());
+  els.tomlFileInput.addEventListener("change", importTomlFromFile);
   els.copyTomlButton.addEventListener("click", copyToml);
   els.downloadTomlButton.addEventListener("click", downloadToml);
   els.keepButton.addEventListener("click", toggleCurrentFavorite);
@@ -563,11 +567,36 @@ function once(callback) {
 }
 
 function importTomlFromTextarea() {
-  const result = parseToml(els.importToml.value);
+  importToml(els.importToml.value);
+}
+
+async function importTomlFromFile(event) {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    els.importToml.value = text;
+    importToml(text);
+  } catch {
+    setMessage(els.tomlMessage, "That file could not be read.");
+  } finally {
+    event.target.value = "";
+  }
+}
+
+function importToml(text) {
+  const result = parseToml(text);
   if (!result.ok) {
     setMessage(els.tomlMessage, result.message);
     return;
   }
+
+  if (!confirm("Importing TOML replaces all saved videos, favorites, and settings. Continue?")) {
+    setMessage(els.tomlMessage, "Import cancelled.");
+    return;
+  }
+
   state = result.state;
   saveState();
   setMessage(els.tomlMessage, "TOML imported.");

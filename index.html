@@ -109,9 +109,11 @@
           </label>
           <div class="button-row">
             <button id="importTomlButton" class="secondary-action" type="button">Import TOML</button>
+            <button id="uploadTomlButton" class="secondary-action" type="button">Upload TOML</button>
             <button id="copyTomlButton" class="secondary-action" type="button">Copy TOML</button>
             <button id="downloadTomlButton" class="secondary-action" type="button">Download TOML</button>
           </div>
+          <input id="tomlFileInput" type="file" accept=".toml,text/plain" hidden>
           <label>
             Export TOML
             <textarea id="exportToml" spellcheck="false" rows="9" readonly></textarea>
