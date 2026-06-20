@@ -188,13 +188,12 @@ textarea:focus-visible {
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font-size: 1.2rem;
-  opacity: 0.68;
+  font-size: 1.125rem;
+  opacity: 0.35;
+  filter: grayscale(1);
 }
 
-.parent-entry:focus-visible,
-.parent-entry:hover {
-  border-color: var(--line);
+.parent-entry:focus-visible {
   opacity: 1;
 }
 
@@ -346,7 +345,14 @@ textarea {
 }
 
 .kid-topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  align-items: start;
   margin-bottom: 12px;
+}
+
+.kid-topline .parent-entry {
+  justify-self: end;
 }
 
 #favoritesSection {
