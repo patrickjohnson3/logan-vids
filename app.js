@@ -81,8 +81,7 @@ const els = {
   playerFrameWrap: document.getElementById("playerFrameWrap"),
   keepButton: document.getElementById("keepButton"),
   againButton: document.getElementById("againButton"),
-  playerHomeButton: document.getElementById("playerHomeButton"),
-  stopButton: document.getElementById("stopButton")
+  playerHomeButton: document.getElementById("playerHomeButton")
 };
 
 init();
@@ -135,7 +134,6 @@ function bindEvents() {
   els.keepButton.addEventListener("click", toggleCurrentFavorite);
   els.againButton.addEventListener("click", playCurrentAgain);
   els.playerHomeButton.addEventListener("click", returnToKidMode);
-  els.stopButton.addEventListener("click", stopPlayer);
 }
 
 function showScreen(name) {
@@ -334,11 +332,12 @@ function renderKid() {
   els.kidVideoGrid.innerHTML = "";
 
   const favorites = state.videos.filter((video) => video.favorite === "true");
+  const approvedVideos = state.videos.filter((video) => video.favorite !== "true");
   els.favoritesSection.hidden = favorites.length === 0;
   els.emptyKidMessage.hidden = state.videos.length > 0;
 
   favorites.forEach((video) => els.favoritesRow.append(makeVideoTile(video)));
-  state.videos.forEach((video) => els.kidVideoGrid.append(makeVideoTile(video)));
+  approvedVideos.forEach((video) => els.kidVideoGrid.append(makeVideoTile(video)));
 }
 
 function makeSmallButton(label, onClick, disabled, className) {
@@ -596,10 +595,6 @@ function leavePlayer() {
 }
 
 function returnToKidMode() {
-  leavePlayer();
-}
-
-function stopPlayer() {
   leavePlayer();
 }
 

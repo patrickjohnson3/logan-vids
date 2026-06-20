@@ -38,7 +38,7 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - Tapping a tile speaks its title, then starts the selected video.
 - **Again** speaks “again”, then restarts the same video.
 - **Favorites** adds a video to favorites. The control becomes **Remove** when it is already favorited.
-- Favorites remain at the top of Kid Mode in their saved order.
+- Favorites remain at the top of Kid Mode in their saved order and do not repeat in the video grid.
 - Every approved video is configured to loop, avoiding YouTube end-screen recommendations.
 
 ## YouTube URLs
@@ -101,7 +101,7 @@ node --check app.js
 Before sharing a build, verify these flows in Android Chrome:
 
 1. Enter Kid Mode and confirm fullscreen starts; open Parent Mode and confirm fullscreen exits.
-2. Add a valid watch URL, then confirm its thumbnail, speech prompt, autoplay, repeat, and stop controls work.
+2. Add a valid watch URL, then confirm its thumbnail, speech prompt, autoplay, repeat, and Home controls work.
 3. Toggle Favorites/Remove and confirm the favorite row updates after returning to Kid Mode.
 4. Import a valid TOML file, cancel the replacement warning once, then confirm a second import replaces settings, videos, and favorites.
 5. Import TOML with a duplicate key, invalid setting, invalid URL, and overlong title; each must show an error without changing saved data.
