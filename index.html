@@ -23,15 +23,17 @@
         </div>
       </section>
 
-      <section id="unlockScreen" class="screen" aria-labelledby="unlockTitle">
-        <button id="unlockBackButton" class="quiet-link" type="button">Home</button>
-        <h2 id="unlockTitle">Parent unlock</h2>
-        <form id="unlockForm" class="panel">
-          <label for="unlockCode">Code</label>
-          <input id="unlockCode" class="code-input" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]*">
-          <button class="primary-action" type="submit">Enter</button>
-          <p id="unlockMessage" class="message" role="status"></p>
-        </form>
+      <section id="unlockScreen" class="screen unlock-overlay" role="dialog" aria-modal="true" aria-labelledby="unlockTitle">
+        <div class="unlock-dialog">
+          <button id="unlockBackButton" class="quiet-link" type="button">Home</button>
+          <h2 id="unlockTitle">Parent unlock</h2>
+          <form id="unlockForm" class="panel">
+            <label for="unlockCode">Code</label>
+            <input id="unlockCode" class="code-input" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]*">
+            <button class="primary-action" type="submit">Enter</button>
+            <p id="unlockMessage" class="message" role="status"></p>
+          </form>
+        </div>
       </section>
 
       <section id="parentScreen" class="screen parent-layout" aria-labelledby="parentTitle">

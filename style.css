@@ -115,6 +115,21 @@ textarea:focus-visible {
   display: block;
 }
 
+.unlock-overlay.active {
+  display: grid;
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  align-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+.unlock-dialog {
+  width: min(100%, 420px);
+  margin: 0 auto;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

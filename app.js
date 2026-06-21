@@ -103,7 +103,7 @@ function bindEvents() {
 
   els.parentModeButton.addEventListener("click", () => openParentUnlock("home"));
   els.kidParentButton.addEventListener("click", () => openParentUnlock("kid"));
-  els.unlockBackButton.addEventListener("click", () => showScreen(unlockReturnScreen));
+  els.unlockBackButton.addEventListener("click", closeParentUnlock);
 
   document.querySelectorAll("[data-go-home]").forEach((button) => {
     button.addEventListener("click", () => showScreen("home"));
@@ -159,10 +159,24 @@ function exitKidFullscreen() {
 function openParentUnlock(returnScreen) {
   unlockReturnScreen = returnScreen;
   els.unlockCode.value = "";
-  els.unlockBackButton.textContent = returnScreen === "kid" ? "Kid mode" : "Home";
+  els.unlockBackButton.textContent = returnScreen === "kid" ? "Back to videos" : "Home";
   setMessage(els.unlockMessage, "");
-  showScreen("unlock");
+  if (returnScreen === "kid") {
+    screens.unlock.classList.add("active");
+  } else {
+    showScreen("unlock");
+  }
   els.unlockCode.focus();
+}
+
+function closeParentUnlock() {
+  screens.unlock.classList.remove("active");
+  showScreen(unlockReturnScreen);
+  if (unlockReturnScreen === "kid") {
+    els.kidParentButton.focus();
+  } else {
+    els.parentModeButton.focus();
+  }
 }
 
 // State and persistence
