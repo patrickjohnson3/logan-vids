@@ -137,7 +137,7 @@ function bindEvents() {
 }
 
 function showScreen(name) {
-  if (name === "home" || name === "unlock" || name === "parent") {
+  if (name === "home" || name === "parent") {
     exitKidFullscreen();
   }
   Object.values(screens).forEach((screen) => screen.classList.remove("active"));
