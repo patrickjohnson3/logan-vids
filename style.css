@@ -440,6 +440,30 @@ textarea {
   min-height: calc(100vh - 24px);
 }
 
+.player-video-area {
+  display: grid;
+  gap: 8px;
+}
+
+.player-home-button {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  justify-self: start;
+  place-items: center;
+  padding: 0;
+  border-color: var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 1px 4px var(--shadow);
+  font-size: 1.35rem;
+}
+
+.player-home-button:active {
+  transform: scale(0.97);
+  background: var(--surface-2);
+}
+
 .player-frame-wrap {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -458,7 +482,7 @@ textarea {
 
 .player-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -529,7 +553,7 @@ textarea {
   }
 
   .player-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -547,13 +571,22 @@ textarea {
     min-height: 0;
   }
 
+  .player-video-area {
+    grid-template-rows: 48px minmax(0, 1fr);
+    height: 100%;
+    min-width: 0;
+  }
+
   .player-frame-wrap {
-    align-self: center;
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    justify-self: center;
   }
 
   .player-controls {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
     height: 100%;
     margin-top: 0;
   }
