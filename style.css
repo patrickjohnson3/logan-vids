@@ -122,7 +122,7 @@ textarea:focus-visible {
   inset: 0;
   align-content: center;
   padding: 24px;
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
 }
 
 .unlock-dialog {
