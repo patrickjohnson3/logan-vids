@@ -159,7 +159,7 @@ function exitKidFullscreen() {
 function openParentUnlock(returnScreen) {
   unlockReturnScreen = returnScreen;
   els.unlockCode.value = "";
-  els.unlockBackButton.textContent = returnScreen === "kid" ? "Back to videos" : "Home";
+  els.unlockBackButton.textContent = returnScreen === "kid" ? "Back" : "Home";
   setMessage(els.unlockMessage, "");
   showScreen("unlock");
   els.unlockCode.focus();

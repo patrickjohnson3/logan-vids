@@ -117,11 +117,18 @@ textarea:focus-visible {
 
 .unlock-layout.active {
   display: grid;
+  position: relative;
   min-height: calc(100vh - 24px);
   align-content: center;
   justify-content: center;
   padding: 24px;
   background: var(--bg);
+}
+
+#unlockBackButton {
+  position: absolute;
+  top: 24px;
+  left: 24px;
 }
 
 .unlock-dialog {
