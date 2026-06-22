@@ -161,16 +161,11 @@ function openParentUnlock(returnScreen) {
   els.unlockCode.value = "";
   els.unlockBackButton.textContent = returnScreen === "kid" ? "Back to videos" : "Home";
   setMessage(els.unlockMessage, "");
-  if (returnScreen === "kid") {
-    screens.unlock.classList.add("active");
-  } else {
-    showScreen("unlock");
-  }
+  showScreen("unlock");
   els.unlockCode.focus();
 }
 
 function closeParentUnlock() {
-  screens.unlock.classList.remove("active");
   showScreen(unlockReturnScreen);
   if (unlockReturnScreen === "kid") {
     els.kidParentButton.focus();
