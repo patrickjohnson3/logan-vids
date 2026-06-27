@@ -236,7 +236,7 @@ function normalizeState(raw) {
       .map((video) => ({
         id: video.id,
         title: String(video.title || "Untitled"),
-        youtubeUrl: String(video.youtubeUrl || ""),
+        youtubeUrl: normalizeStoredYouTubeUrl(video),
         embedUrl: String(video.embedUrl || buildEmbedUrl(video.id)),
         favorite: String(video.favorite || "false")
       }));
@@ -445,7 +445,7 @@ function addVideoFromForm(event) {
     draft.videos.push({
       id: result.id,
       title,
-      youtubeUrl: url,
+      youtubeUrl: result.canonicalUrl,
       embedUrl: buildEmbedUrl(result.id),
       favorite: "false"
     });
@@ -659,7 +659,17 @@ function validateVideoId(id) {
   if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) {
     return { ok: false, message: "That YouTube video ID does not look valid." };
   }
-  return { ok: true, id };
+  return { ok: true, id, canonicalUrl: buildCanonicalWatchUrl(id) };
+}
+
+function buildCanonicalWatchUrl(id) {
+  return `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
+}
+
+function normalizeStoredYouTubeUrl(video) {
+  const parsedUrl = parseYouTubeUrl(video.youtubeUrl || "");
+  if (parsedUrl.ok && parsedUrl.id === video.id) return parsedUrl.canonicalUrl;
+  return buildCanonicalWatchUrl(video.id);
 }
 
 function buildEmbedUrl(id, autoplay = false, controlsEnabled = true) {
@@ -919,7 +929,7 @@ function normalizeImportedVideos(videos) {
     normalizedVideos.push({
       id: parsedUrl.id,
       title: video.title,
-      youtubeUrl: video.url,
+      youtubeUrl: parsedUrl.canonicalUrl,
       embedUrl: buildEmbedUrl(parsedUrl.id),
       favorite: video.favorite === "true" ? "true" : "false"
     });

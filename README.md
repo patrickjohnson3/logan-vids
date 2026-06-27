@@ -49,6 +49,7 @@ Only individual videos are accepted:
 - `https://youtu.be/VIDEO_ID`
 
 The app rejects channels, playlists, Shorts, and livestream URLs. It converts accepted URLs into `youtube-nocookie.com` embeds.
+Accepted share URLs are saved as clean watch URLs, so tracking parameters such as `si=...` are stripped.
 
 The player iframe is sandboxed and has no fullscreen, sharing, clipboard, Picture-in-Picture, popup, or top-level-navigation permission. This reduces exposure to YouTube, but it cannot turn a remote YouTube embed into a complete kiosk. Use Android app pinning or kiosk controls when stricter device-level containment is required.
 
