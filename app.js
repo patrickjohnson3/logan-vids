@@ -623,10 +623,6 @@ function parseYouTubeUrl(value) {
   const host = url.hostname.replace(/^www\./, "").toLowerCase();
   const path = url.pathname;
 
-  if (url.searchParams.has("list")) {
-    return { ok: false, message: "Playlists are not supported." };
-  }
-
   if (path.startsWith("/shorts/")) {
     return { ok: false, message: "Shorts are not supported." };
   }
@@ -644,6 +640,9 @@ function parseYouTubeUrl(value) {
       return { ok: false, message: "Only individual YouTube watch URLs are supported." };
     }
     const id = url.searchParams.get("v");
+    if (!id && url.searchParams.has("list")) {
+      return { ok: false, message: "Playlist URLs are not supported." };
+    }
     return validateVideoId(id);
   }
 
