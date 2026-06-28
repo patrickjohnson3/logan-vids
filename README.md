@@ -100,6 +100,8 @@ No dependencies are needed. To check JavaScript syntax:
 node --check app.js
 ```
 
+To run the no-framework browser helper tests, open `tests.html` directly in a browser or from the local static server.
+
 ## Manual browser checks
 
 Before sharing a build, verify these flows in Android Chrome:
