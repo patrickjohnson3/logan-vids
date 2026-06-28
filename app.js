@@ -88,7 +88,7 @@ const els = {
   emptyKidMessage: document.getElementById("emptyKidMessage"),
   playerFrameWrap: document.getElementById("playerFrameWrap"),
   favoriteButton: document.getElementById("favoriteButton"),
-  moreButton: document.getElementById("moreButton"),
+  similarButton: document.getElementById("similarButton"),
   againButton: document.getElementById("againButton"),
   playerHomeButton: document.getElementById("playerHomeButton")
 };
@@ -141,7 +141,7 @@ function bindEvents() {
   els.copyTomlButton.addEventListener("click", copyToml);
   els.downloadTomlButton.addEventListener("click", downloadToml);
   els.favoriteButton.addEventListener("click", toggleCurrentFavorite);
-  els.moreButton.addEventListener("click", playTaggedVideo);
+  els.similarButton.addEventListener("click", playSimilarVideo);
   els.againButton.addEventListener("click", playCurrentAgain);
   els.playerHomeButton.addEventListener("click", returnToKidMode);
 }
@@ -620,7 +620,7 @@ function toggleCurrentFavorite() {
 function renderPlayerControls(video) {
   const isFavorite = Boolean(video && video.favorite === "true");
   const label = isFavorite ? "Remove" : "Favorites";
-  const taggedVideo = video ? findTaggedVideo(video.id) : null;
+  const similarVideo = video ? findSimilarVideo(video.id) : null;
   els.favoriteButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";
   els.favoriteButton.querySelector(".player-button-label").textContent = label;
   els.favoriteButton.setAttribute("aria-pressed", String(isFavorite));
@@ -628,15 +628,15 @@ function renderPlayerControls(video) {
     "aria-label",
     isFavorite ? "Remove from favorites" : "Add to favorites"
   );
-  els.moreButton.disabled = !taggedVideo;
-  els.moreButton.setAttribute(
+  els.similarButton.disabled = !similarVideo;
+  els.similarButton.setAttribute(
     "aria-label",
-    taggedVideo ? `Similar to ${video.title}` : "No similar videos"
+    similarVideo ? `Similar to ${video.title}` : "No similar videos"
   );
 }
 
-function playTaggedVideo() {
-  const nextVideo = findTaggedVideo(currentVideoId);
+function playSimilarVideo() {
+  const nextVideo = findSimilarVideo(currentVideoId);
   if (!nextVideo) return;
 
   currentVideoId = nextVideo.id;
@@ -690,7 +690,7 @@ function findVideo(id) {
   return state.videos.find((video) => video.id === id);
 }
 
-function findTaggedVideo(id) {
+function findSimilarVideo(id) {
   const currentVideo = findVideo(id);
   if (!currentVideo) return null;
 
