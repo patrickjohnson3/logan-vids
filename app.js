@@ -106,7 +106,7 @@ init();
 function init() {
   applyTheme();
   bindEvents();
-  renderAll();
+  renderCurrentScreen();
   showScreen(SCREEN.home);
 }
 
@@ -222,7 +222,7 @@ function persistState() {
     persisted = false;
     storageWarning = MESSAGES.storageUnavailable;
   }
-  renderAll();
+  renderCurrentScreen();
   return persisted;
 }
 
@@ -259,10 +259,16 @@ function normalizeState(raw) {
 }
 
 // Rendering
-function renderAll() {
+function renderCurrentScreen() {
   applyTheme();
-  renderParent();
-  renderKid();
+  const screenName = getActiveScreenName();
+  if (screenName === SCREEN.parent) renderParent();
+  if (screenName === SCREEN.kid) renderKid();
+  if (screenName === SCREEN.player) renderPlayer();
+}
+
+function getActiveScreenName() {
+  return Object.keys(screens).find((name) => screens[name].classList.contains("active")) || SCREEN.home;
 }
 
 function applyTheme() {
@@ -617,6 +623,10 @@ function startCurrentPlayer(autoplay) {
     state.settings.youtubeControls === "true"
   );
   els.playerFrameWrap.append(iframe);
+}
+
+function renderPlayer() {
+  renderPlayerControls(findVideo(currentVideoId));
 }
 
 function toggleCurrentFavorite() {
