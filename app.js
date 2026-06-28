@@ -146,6 +146,7 @@ function showScreen(name) {
   if (name === "home" || name === "parent") {
     exitKidFullscreen();
   }
+  els.app.classList.toggle("player-active", name === "player");
   Object.values(screens).forEach((screen) => screen.classList.remove("active"));
   screens[name].classList.add("active");
   if (name === "parent") renderParent();
