@@ -4,6 +4,10 @@ const STORAGE_KEY = "repeat.runtimeState.v1";
 const MAX_TITLE_LENGTH = 48;
 const MAX_TAGS_LENGTH = 120;
 const MAX_TOML_FILE_BYTES = 256 * 1024;
+const BOOLEAN_VALUES = ["true", "false"];
+const THEME_VALUES = ["dark", "light"];
+const VIDEO_GRID_ORDER_VALUES = ["manual", "alpha"];
+const TOML_VIDEO_KEYS = ["title", "url", "icon", "favorite", "tags"];
 const MESSAGES = {
   storageUnavailable: "Storage is unavailable. Changes will be lost when this page closes.",
   storageUnreadable: "Saved data could not be read. Repeat started with an empty library.",
@@ -975,7 +979,7 @@ function parseRepeatToml(text) {
         return failToml(lineNumber, `Duplicate video value "${key}".`);
       }
       videoKeys.add(key);
-      if (!["title", "url", "icon", "favorite", "tags"].includes(key)) {
+      if (!TOML_VIDEO_KEYS.includes(key)) {
         return failToml(lineNumber, `Unknown video value "${key}".`);
       }
       // Legacy icon values are accepted but ignored: videos no longer have icons.
@@ -1029,7 +1033,7 @@ function normalizeTomlVideos(videos) {
       return { ok: false, message: `Video ${index + 1}: ${tagsError}` };
     }
 
-    if (Object.prototype.hasOwnProperty.call(video, "favorite") && !/^(true|false)$/.test(video.favorite)) {
+    if (Object.prototype.hasOwnProperty.call(video, "favorite") && !isAllowedValue(video.favorite, BOOLEAN_VALUES)) {
       return { ok: false, message: `Video ${index + 1}: favorite must be "true" or "false".` };
     }
 
@@ -1060,11 +1064,11 @@ function validateSettings(settings) {
     return "Settings: unlockCode must contain 4 to 12 digits.";
   }
 
-  if (!/^(true|false)$/.test(settings.audioFeedback)) {
+  if (!isAllowedValue(settings.audioFeedback, BOOLEAN_VALUES)) {
     return "Settings: audioFeedback must be \"true\" or \"false\".";
   }
 
-  if (!/^(true|false)$/.test(settings.youtubeControls)) {
+  if (!isAllowedValue(settings.youtubeControls, BOOLEAN_VALUES)) {
     return "Settings: youtubeControls must be \"true\" or \"false\".";
   }
 
@@ -1073,15 +1077,19 @@ function validateSettings(settings) {
     return "Settings: speechRate must be between 0.6 and 1.2.";
   }
 
-  if (!/^(dark|light)$/.test(settings.theme)) {
+  if (!isAllowedValue(settings.theme, THEME_VALUES)) {
     return "Settings: theme must be \"dark\" or \"light\".";
   }
 
-  if (!/^(manual|alpha)$/.test(settings.videoGridOrder)) {
+  if (!isAllowedValue(settings.videoGridOrder, VIDEO_GRID_ORDER_VALUES)) {
     return "Settings: videoGridOrder must be \"manual\" or \"alpha\".";
   }
 
   return "";
+}
+
+function isAllowedValue(value, allowedValues) {
+  return allowedValues.includes(value);
 }
 
 function normalizeSettings(settings) {
