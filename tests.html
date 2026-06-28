@@ -142,15 +142,20 @@
       });
 
       test("findSimilarVideo picks next shared-tag video", () => {
-        state = normalizeState({
-          settings: {},
-          videos: [
-            { id: "AbCdEfGhI_j", title: "One", tags: "trains" },
-            { id: "BbCdEfGhI_j", title: "Two", tags: "music" },
-            { id: "CbCdEfGhI_j", title: "Three", tags: "trains, calm" }
-          ]
-        });
-        assert(findSimilarVideo("AbCdEfGhI_j").id === "CbCdEfGhI_j", "shared tag video should be selected");
+        const previousState = state;
+        try {
+          state = normalizeState({
+            settings: {},
+            videos: [
+              { id: "AbCdEfGhI_j", title: "One", tags: "trains" },
+              { id: "BbCdEfGhI_j", title: "Two", tags: "music" },
+              { id: "CbCdEfGhI_j", title: "Three", tags: "trains, calm" }
+            ]
+          });
+          assert(findSimilarVideo("AbCdEfGhI_j").id === "CbCdEfGhI_j", "shared tag video should be selected");
+        } finally {
+          state = previousState;
+        }
       });
 
       const output = [];
