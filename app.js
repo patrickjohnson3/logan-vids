@@ -235,6 +235,7 @@ function normalizeState(raw) {
       if (typeof raw.settings[key] === "string") normalized.settings[key] = raw.settings[key];
     });
   }
+  normalized.settings = normalizeSettings(normalized.settings);
 
   if (Array.isArray(raw && raw.videos)) {
     normalized.videos = raw.videos
@@ -1089,6 +1090,15 @@ function validateSettings(settings) {
   }
 
   return "";
+}
+
+function normalizeSettings(settings) {
+  const normalized = cloneDefaultState().settings;
+  Object.keys(normalized).forEach((key) => {
+    if (typeof settings[key] === "string") normalized[key] = settings[key];
+  });
+
+  return validateSettings(normalized) ? cloneDefaultState().settings : normalized;
 }
 
 function failToml(lineNumber, message) {
