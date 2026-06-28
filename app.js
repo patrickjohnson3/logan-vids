@@ -25,6 +25,7 @@ const MESSAGES = {
   fileTooLarge: "Choose a TOML file smaller than 256 KB.",
   copyFailed: "Copy did not work. Select the TOML and copy it manually."
 };
+const IS_TEST_MODE = typeof window !== "undefined" && window.REPEAT_TEST_MODE === true;
 let storageWarning = "";
 const DEFAULT_STATE = {
   settings: {
@@ -100,7 +101,7 @@ const els = {
   playerHomeButton: document.getElementById("playerHomeButton")
 };
 
-init();
+if (!IS_TEST_MODE) init();
 
 // Startup and event wiring
 function init() {
@@ -194,6 +195,8 @@ function closeParentUnlock() {
 
 // State and persistence
 function loadState() {
+  if (IS_TEST_MODE) return cloneDefaultState();
+
   let saved;
   try {
     saved = localStorage.getItem(STORAGE_KEY);
@@ -214,6 +217,11 @@ function loadState() {
 }
 
 function persistState() {
+  if (IS_TEST_MODE) {
+    renderCurrentScreen();
+    return true;
+  }
+
   let persisted = true;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
