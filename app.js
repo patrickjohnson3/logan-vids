@@ -266,7 +266,7 @@ function renderParent() {
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;
   els.settingVideoGridOrder.value = state.settings.videoGridOrder;
-  els.exportToml.value = writeToml(state);
+  els.exportToml.value = writeRepeatToml(state);
   els.storageMessage.textContent = storageWarning;
 
   els.parentVideoList.innerHTML = "";
@@ -854,7 +854,7 @@ async function importTomlFromFile(event) {
 }
 
 function importToml(text) {
-  const result = parseToml(text);
+  const result = parseRepeatToml(text);
   if (!result.ok) {
     setMessage(els.tomlMessage, result.message);
     return;
@@ -873,7 +873,7 @@ function importToml(text) {
 }
 
 function copyToml() {
-  const text = writeToml(state);
+  const text = writeRepeatToml(state);
   els.exportToml.value = text;
 
   if (navigator.clipboard && window.isSecureContext) {
@@ -901,7 +901,7 @@ function fallbackCopyToml() {
 }
 
 function downloadToml() {
-  const blob = new Blob([writeToml(state)], { type: "text/plain;charset=utf-8" });
+  const blob = new Blob([writeRepeatToml(state)], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -919,7 +919,7 @@ function setMessage(element, text) {
 
 // Minimal TOML reader for this app only:
 // [settings], [[videos]], and quoted string key/value pairs.
-function parseToml(text) {
+function parseRepeatToml(text) {
   const nextState = cloneDefaultState();
   nextState.videos = [];
   let section = null;
@@ -988,7 +988,7 @@ function parseToml(text) {
     return { ok: false, message: settingsError };
   }
 
-  const videosResult = normalizeImportedVideos(nextState.videos);
+  const videosResult = normalizeTomlVideos(nextState.videos);
   if (!videosResult.ok) return videosResult;
   nextState.videos = videosResult.videos;
 
@@ -1009,7 +1009,7 @@ function parseTomlAssignment(line, lineNumber) {
   return { ok: true, key: match[1], value: stringResult.value };
 }
 
-function normalizeImportedVideos(videos) {
+function normalizeTomlVideos(videos) {
   const importedIds = new Set();
   const normalizedVideos = [];
 
@@ -1109,7 +1109,7 @@ function failToml(lineNumber, message) {
   return { ok: false, message: `Line ${lineNumber}: ${message}` };
 }
 
-function writeToml(currentState) {
+function writeRepeatToml(currentState) {
   const lines = [
     "# Repeat configuration",
     "[settings]",
