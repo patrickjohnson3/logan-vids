@@ -1031,6 +1031,10 @@ function normalizeImportedVideos(videos) {
       return { ok: false, message: `Video ${index + 1}: ${tagsError}` };
     }
 
+    if (Object.prototype.hasOwnProperty.call(video, "favorite") && !/^(true|false)$/.test(video.favorite)) {
+      return { ok: false, message: `Video ${index + 1}: favorite must be "true" or "false".` };
+    }
+
     const parsedUrl = parseYouTubeUrl(video.url);
     if (!parsedUrl.ok) {
       return { ok: false, message: `Video ${index + 1}: ${parsedUrl.message}` };
