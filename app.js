@@ -21,7 +21,8 @@ const DEFAULT_STATE = {
     audioFeedback: "true",
     youtubeControls: "false",
     speechRate: "0.9",
-    theme: "dark"
+    theme: "dark",
+    videoGridOrder: "manual"
   },
   videos: []
 };
@@ -57,6 +58,7 @@ const els = {
   settingSpeechRate: document.getElementById("settingSpeechRate"),
   speechRateOutput: document.getElementById("speechRateOutput"),
   settingTheme: document.getElementById("settingTheme"),
+  settingVideoGridOrder: document.getElementById("settingVideoGridOrder"),
   saveSettingsButton: document.getElementById("saveSettingsButton"),
   settingsMessage: document.getElementById("settingsMessage"),
   storageMessage: document.getElementById("storageMessage"),
@@ -266,6 +268,7 @@ function renderParent() {
   els.settingSpeechRate.value = state.settings.speechRate;
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;
+  els.settingVideoGridOrder.value = state.settings.videoGridOrder;
   els.exportToml.value = writeToml(state);
   els.storageMessage.textContent = storageWarning;
 
@@ -357,12 +360,21 @@ function renderKid() {
   els.kidVideoGrid.innerHTML = "";
 
   const favorites = state.videos.filter((video) => video.favorite === "true");
-  const approvedVideos = state.videos.filter((video) => video.favorite !== "true");
+  const approvedVideos = getKidGridVideos();
   els.favoritesSection.hidden = favorites.length === 0;
   els.emptyKidMessage.hidden = state.videos.length > 0;
 
   favorites.forEach((video) => els.favoritesRow.append(makeVideoTile(video)));
   approvedVideos.forEach((video) => els.kidVideoGrid.append(makeVideoTile(video)));
+}
+
+function getKidGridVideos() {
+  const videos = state.videos.filter((video) => video.favorite !== "true");
+  if (state.settings.videoGridOrder !== "alpha") return videos;
+
+  return videos.slice().sort((first, second) =>
+    first.title.localeCompare(second.title, undefined, { sensitivity: "base" })
+  );
 }
 
 function makeSmallButton(label, onClick, disabled, className) {
@@ -417,7 +429,8 @@ function saveSettingsFromForm() {
     audioFeedback: String(els.settingAudioFeedback.checked),
     youtubeControls: String(els.settingYouTubeControls.checked),
     speechRate: els.settingSpeechRate.value,
-    theme: els.settingTheme.value
+    theme: els.settingTheme.value,
+    videoGridOrder: els.settingVideoGridOrder.value
   };
   const settingsError = validateSettings(nextSettings);
   if (settingsError) {
@@ -1016,6 +1029,10 @@ function validateSettings(settings) {
     return "Settings: theme must be \"dark\" or \"light\".";
   }
 
+  if (!/^(manual|alpha)$/.test(settings.videoGridOrder)) {
+    return "Settings: videoGridOrder must be \"manual\" or \"alpha\".";
+  }
+
   return "";
 }
 
@@ -1031,7 +1048,8 @@ function writeToml(currentState) {
     `audioFeedback = "${escapeTomlString(currentState.settings.audioFeedback)}"`,
     `youtubeControls = "${escapeTomlString(currentState.settings.youtubeControls)}"`,
     `speechRate = "${escapeTomlString(currentState.settings.speechRate)}"`,
-    `theme = "${escapeTomlString(currentState.settings.theme)}"`
+    `theme = "${escapeTomlString(currentState.settings.theme)}"`,
+    `videoGridOrder = "${escapeTomlString(currentState.settings.videoGridOrder)}"`
   ];
 
   currentState.videos.forEach((video) => {

@@ -74,6 +74,7 @@ audioFeedback = "true"
 youtubeControls = "false"
 speechRate = "0.9"
 theme = "dark"
+videoGridOrder = "manual"
 
 [[videos]]
 title = "Example video"
