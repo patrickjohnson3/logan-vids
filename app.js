@@ -270,6 +270,11 @@ function applyTheme() {
 }
 
 function renderParent() {
+  renderParentSettings();
+  renderParentVideoList();
+}
+
+function renderParentSettings() {
   els.settingCode.value = state.settings.unlockCode;
   els.settingAudioFeedback.checked = state.settings.audioFeedback === "true";
   els.settingYouTubeControls.checked = state.settings.youtubeControls === "true";
@@ -279,7 +284,9 @@ function renderParent() {
   els.settingVideoGridOrder.value = state.settings.videoGridOrder;
   els.exportToml.value = writeRepeatToml(state);
   els.storageMessage.textContent = storageWarning;
+}
 
+function renderParentVideoList() {
   els.parentVideoList.innerHTML = "";
   els.emptyParentMessage.hidden = state.videos.length > 0;
 
