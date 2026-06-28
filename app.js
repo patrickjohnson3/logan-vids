@@ -748,6 +748,7 @@ function findSimilarVideo(id) {
   const currentIndex = state.videos.findIndex((video) => video.id === id);
   for (let offset = 1; offset < state.videos.length; offset += 1) {
     const candidate = state.videos[(currentIndex + offset) % state.videos.length];
+    if (candidate.favorite === "true") continue;
     if (sharesAnyTag(currentTags, candidate.tags)) return candidate;
   }
 

@@ -161,6 +161,23 @@
         }
       });
 
+      test("findSimilarVideo skips favorites", () => {
+        const previousState = state;
+        try {
+          state = normalizeState({
+            settings: {},
+            videos: [
+              { id: "AbCdEfGhI_j", title: "One", tags: "trains" },
+              { id: "BbCdEfGhI_j", title: "Two", tags: "trains", favorite: "true" },
+              { id: "CbCdEfGhI_j", title: "Three", tags: "trains" }
+            ]
+          });
+          assert(findSimilarVideo("AbCdEfGhI_j").id === "CbCdEfGhI_j", "favorite match should be skipped");
+        } finally {
+          state = previousState;
+        }
+      });
+
       const output = [];
       let failures = 0;
       tests.forEach(({ name, fn }) => {
