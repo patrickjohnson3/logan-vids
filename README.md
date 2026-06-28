@@ -38,6 +38,7 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - Tapping a tile speaks its title, then starts the selected video.
 - **Again** speaks “again”, then restarts the same video.
 - **Favorites** adds a video to favorites. The control becomes **Remove** when it is already favorited.
+- **More** selects the next saved video with at least one matching parent tag, then speaks its title before playback.
 - Favorites remain at the top of Kid Mode in their saved order and do not repeat in the video grid.
 - Every approved video is configured to loop, avoiding YouTube end-screen recommendations.
 

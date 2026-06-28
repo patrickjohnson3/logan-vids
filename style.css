@@ -499,7 +499,7 @@ textarea {
 
 .player-controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -519,6 +519,17 @@ textarea {
   transform: scale(0.97);
   background: var(--surface);
   box-shadow: inset 0 3px 8px var(--shadow);
+}
+
+.player-button:disabled {
+  color: var(--muted);
+  opacity: 0.55;
+}
+
+.player-button:disabled:active {
+  transform: none;
+  background: var(--surface-2);
+  box-shadow: none;
 }
 
 .player-button .player-button-label {
@@ -570,7 +581,7 @@ textarea {
   }
 
   .player-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -603,7 +614,7 @@ textarea {
 
   .player-controls {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
     height: 100%;
     margin-top: 0;
   }

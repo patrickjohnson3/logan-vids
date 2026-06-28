@@ -84,6 +84,7 @@ const els = {
   emptyKidMessage: document.getElementById("emptyKidMessage"),
   playerFrameWrap: document.getElementById("playerFrameWrap"),
   keepButton: document.getElementById("keepButton"),
+  moreButton: document.getElementById("moreButton"),
   againButton: document.getElementById("againButton"),
   playerHomeButton: document.getElementById("playerHomeButton")
 };
@@ -136,6 +137,7 @@ function bindEvents() {
   els.copyTomlButton.addEventListener("click", copyToml);
   els.downloadTomlButton.addEventListener("click", downloadToml);
   els.keepButton.addEventListener("click", toggleCurrentFavorite);
+  els.moreButton.addEventListener("click", playTaggedVideo);
   els.againButton.addEventListener("click", playCurrentAgain);
   els.playerHomeButton.addEventListener("click", returnToKidMode);
 }
@@ -620,6 +622,7 @@ function toggleCurrentFavorite() {
 function renderPlayerControls(video) {
   const isFavorite = Boolean(video && video.favorite === "true");
   const label = isFavorite ? "Remove" : "Favorites";
+  const taggedVideo = video ? findTaggedVideo(video.id) : null;
   els.keepButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";
   els.keepButton.querySelector(".player-button-label").textContent = label;
   els.keepButton.setAttribute("aria-pressed", String(isFavorite));
@@ -627,6 +630,21 @@ function renderPlayerControls(video) {
     "aria-label",
     isFavorite ? "Remove from favorites" : "Add to favorites"
   );
+  els.moreButton.disabled = !taggedVideo;
+  els.moreButton.setAttribute(
+    "aria-label",
+    taggedVideo ? `More like ${video.title}` : "No similar videos"
+  );
+}
+
+function playTaggedVideo() {
+  const nextVideo = findTaggedVideo(currentVideoId);
+  if (!nextVideo) return;
+
+  currentVideoId = nextVideo.id;
+  els.playerFrameWrap.innerHTML = "";
+  renderPlayerControls(nextVideo);
+  startPlayerAfterSpeech(nextVideo.title, nextVideo.id);
 }
 
 function playCurrentAgain() {
@@ -672,6 +690,35 @@ function returnToKidMode() {
 
 function findVideo(id) {
   return state.videos.find((video) => video.id === id);
+}
+
+function findTaggedVideo(id) {
+  const currentVideo = findVideo(id);
+  if (!currentVideo) return null;
+
+  const currentTags = makeTagSet(currentVideo.tags);
+  if (currentTags.size === 0) return null;
+
+  const currentIndex = state.videos.findIndex((video) => video.id === id);
+  for (let offset = 1; offset < state.videos.length; offset += 1) {
+    const candidate = state.videos[(currentIndex + offset) % state.videos.length];
+    if (sharesAnyTag(currentTags, candidate.tags)) return candidate;
+  }
+
+  return null;
+}
+
+function makeTagSet(value) {
+  return new Set(
+    String(value)
+      .split(",")
+      .map((tag) => tag.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+function sharesAnyTag(tagSet, value) {
+  return Array.from(makeTagSet(value)).some((tag) => tagSet.has(tag));
 }
 
 // YouTube and speech helpers
