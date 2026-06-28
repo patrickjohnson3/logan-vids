@@ -8,6 +8,13 @@ const BOOLEAN_VALUES = ["true", "false"];
 const THEME_VALUES = ["dark", "light"];
 const VIDEO_GRID_ORDER_VALUES = ["manual", "alpha"];
 const TOML_VIDEO_KEYS = ["title", "url", "icon", "favorite", "tags"];
+const SCREEN = {
+  home: "home",
+  unlock: "unlock",
+  parent: "parent",
+  kid: "kid",
+  player: "player"
+};
 const MESSAGES = {
   storageUnavailable: "Storage is unavailable. Changes will be lost when this page closes.",
   storageUnreadable: "Saved data could not be read. Repeat started with an empty library.",
@@ -34,7 +41,7 @@ const DEFAULT_STATE = {
 // Runtime state and DOM references stay together; pure parsing helpers are below.
 let state = loadState();
 let currentVideoId = null;
-let unlockReturnScreen = "home";
+let unlockReturnScreen = SCREEN.home;
 let speechPlaybackToken = 0;
 let editingVideoId = null;
 
@@ -100,29 +107,29 @@ function init() {
   applyTheme();
   bindEvents();
   renderAll();
-  showScreen("home");
+  showScreen(SCREEN.home);
 }
 
 function bindEvents() {
   els.kidModeButton.addEventListener("click", () => {
     requestKidFullscreen();
     speak(els.kidTitle.textContent);
-    showScreen("kid");
+    showScreen(SCREEN.kid);
   });
 
-  els.parentModeButton.addEventListener("click", () => openParentUnlock("home"));
-  els.kidParentButton.addEventListener("click", () => openParentUnlock("kid"));
+  els.parentModeButton.addEventListener("click", () => openParentUnlock(SCREEN.home));
+  els.kidParentButton.addEventListener("click", () => openParentUnlock(SCREEN.kid));
   els.unlockBackButton.addEventListener("click", closeParentUnlock);
 
   document.querySelectorAll("[data-go-home]").forEach((button) => {
-    button.addEventListener("click", () => showScreen("home"));
+    button.addEventListener("click", () => showScreen(SCREEN.home));
   });
 
   els.unlockForm.addEventListener("submit", (event) => {
     event.preventDefault();
     if (els.unlockCode.value === state.settings.unlockCode) {
       setMessage(els.unlockMessage, "");
-      showScreen("parent");
+      showScreen(SCREEN.parent);
     } else {
       setMessage(els.unlockMessage, "That code did not work.");
     }
@@ -147,14 +154,14 @@ function bindEvents() {
 }
 
 function showScreen(name) {
-  if (name === "home" || name === "parent") {
+  if (name === SCREEN.home || name === SCREEN.parent) {
     exitKidFullscreen();
   }
-  els.app.classList.toggle("player-active", name === "player");
+  els.app.classList.toggle("player-active", name === SCREEN.player);
   Object.values(screens).forEach((screen) => screen.classList.remove("active"));
   screens[name].classList.add("active");
-  if (name === "parent") renderParent();
-  if (name === "kid") renderKid();
+  if (name === SCREEN.parent) renderParent();
+  if (name === SCREEN.kid) renderKid();
 }
 
 function requestKidFullscreen() {
@@ -170,15 +177,15 @@ function exitKidFullscreen() {
 function openParentUnlock(returnScreen) {
   unlockReturnScreen = returnScreen;
   els.unlockCode.value = "";
-  els.unlockBackButton.textContent = returnScreen === "kid" ? "Back" : "Home";
+  els.unlockBackButton.textContent = returnScreen === SCREEN.kid ? "Back" : "Home";
   setMessage(els.unlockMessage, "");
-  showScreen("unlock");
+  showScreen(SCREEN.unlock);
   els.unlockCode.focus();
 }
 
 function closeParentUnlock() {
   showScreen(unlockReturnScreen);
-  if (unlockReturnScreen === "kid") {
+  if (unlockReturnScreen === SCREEN.kid) {
     els.kidParentButton.focus();
   } else {
     els.parentModeButton.focus();
@@ -575,7 +582,7 @@ function openPlayer(id) {
   if (!video) return;
 
   currentVideoId = video.id;
-  showScreen("player");
+  showScreen(SCREEN.player);
   renderPlayerControls(video);
 
   // Wait for the tile label before starting the video, so the two audio cues do not compete.
@@ -655,7 +662,7 @@ function startPlayerAfterSpeech(text, videoId) {
     if (
       playbackToken === speechPlaybackToken &&
       currentVideoId === videoId &&
-      screens.player.classList.contains("active")
+      screens[SCREEN.player].classList.contains("active")
     ) {
       startCurrentPlayer(true);
     }
@@ -679,7 +686,7 @@ function estimateSpeechTimeout(text) {
 function leavePlayer() {
   els.playerFrameWrap.innerHTML = "";
   currentVideoId = null;
-  showScreen("kid");
+  showScreen(SCREEN.kid);
 }
 
 function returnToKidMode() {
