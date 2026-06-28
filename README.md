@@ -106,9 +106,11 @@ To run the no-framework browser helper tests, open `tests.html` directly in a br
 
 Before sharing a build, verify these flows in Android Chrome:
 
-1. Enter Kid Mode and confirm fullscreen starts; open Parent Mode and confirm fullscreen exits.
-2. Add a valid watch URL, then confirm its thumbnail, speech prompt, autoplay, repeat, and Home controls work.
-3. Toggle Favorites/Remove and confirm the favorite row updates after returning to Kid Mode.
-4. Import a valid TOML file, cancel the replacement warning once, then confirm a second import replaces settings, videos, and favorites.
-5. Import TOML with a duplicate key, invalid setting, invalid URL, and overlong title; each must show an error without changing saved data.
-6. Download, copy, and upload `safe-loop-config.toml`, then confirm the configuration round-trips correctly.
+1. Open `tests.html` and confirm all helper tests pass.
+2. Enter Kid Mode and confirm fullscreen starts; open Parent Mode and confirm fullscreen exits.
+3. Add valid watch URLs with tags, then confirm thumbnails, speech prompts, autoplay, Again, Similar, and Home controls work.
+4. Toggle Favorites/Remove and confirm the favorite row updates after returning to Kid Mode.
+5. Switch Video grid order between Manual and A to Z, then confirm Kid Mode reflects the selected order.
+6. Import a valid TOML file, cancel the replacement warning once, then confirm a second import replaces settings, videos, favorites, and tags.
+7. Import TOML with a duplicate key, invalid setting, invalid URL, invalid favorite value, overlong title, and overlong tags; each must show an error without changing saved data.
+8. Download, copy, and upload `safe-loop-config.toml`, then confirm the configuration round-trips correctly.
