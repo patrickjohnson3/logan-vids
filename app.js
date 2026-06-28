@@ -308,7 +308,7 @@ function renderParentVideoList() {
     url.textContent = video.youtubeUrl;
     const tags = document.createElement("p");
     tags.className = "parent-video-tags";
-    tags.textContent = video.tags ? `Tags: ${video.tags}` : "No tags";
+    tags.textContent = video.tags.length > 0 ? `Tags: ${tagsToString(video.tags)}` : "No tags";
 
     if (editingVideoId === video.id) {
       item.append(url, makeVideoMetadataEditor(video));
@@ -348,7 +348,7 @@ function makeVideoMetadataEditor(video) {
   tagsLabel.textContent = "Tags";
   const tagsInput = document.createElement("input");
   tagsInput.type = "text";
-  tagsInput.value = video.tags || "";
+  tagsInput.value = tagsToString(video.tags);
   tagsInput.maxLength = MAX_TAGS_LENGTH;
   tagsInput.placeholder = "trains, music, calm";
   tagsInput.addEventListener("input", () => tagsInput.setCustomValidity(""));
@@ -575,18 +575,34 @@ function saveVideoMetadata(id, titleInput, tagsInput) {
 }
 
 function normalizeTags(value) {
-  return String(value)
-    .split(",")
+  const rawTags = Array.isArray(value) ? value : String(value).split(",");
+  return rawTags
+    .map(String)
     .map((tag) => tag.trim())
-    .filter(Boolean)
-    .join(", ");
+    .filter(Boolean);
+}
+
+function tagsToString(tags) {
+  return normalizeTags(tags).join(", ");
 }
 
 function validateTags(tags) {
-  if (tags.length > MAX_TAGS_LENGTH) {
+  if (tagsToString(tags).length > MAX_TAGS_LENGTH) {
     return `Use tags with ${MAX_TAGS_LENGTH} characters or fewer.`;
   }
   return "";
+}
+
+function makeTagSet(value) {
+  return new Set(
+    normalizeTags(value)
+      .map((tag) => tag.toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+function sharesAnyTag(tagSet, value) {
+  return normalizeTags(value).some((tag) => tagSet.has(tag.toLowerCase()));
 }
 
 // Player lifecycle
@@ -728,19 +744,6 @@ function findSimilarVideo(id) {
   }
 
   return null;
-}
-
-function makeTagSet(value) {
-  return new Set(
-    String(value)
-      .split(",")
-      .map((tag) => tag.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-
-function sharesAnyTag(tagSet, value) {
-  return Array.from(makeTagSet(value)).some((tag) => tagSet.has(tag));
 }
 
 // YouTube and speech helpers
@@ -1158,7 +1161,7 @@ function writeRepeatToml(currentState) {
       "",
       "[[videos]]",
       `title = "${escapeTomlString(video.title)}"`,
-      `tags = "${escapeTomlString(video.tags || "")}"`,
+      `tags = "${escapeTomlString(tagsToString(video.tags))}"`,
       `url = "${escapeTomlString(video.youtubeUrl)}"`,
       `favorite = "${escapeTomlString(video.favorite)}"`
     );
