@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Repeat Tests</title>
+    <style>
+      body {
+        margin: 24px;
+        font-family: system-ui, sans-serif;
+      }
+
+      pre {
+        padding: 16px;
+        background: #f3f3f3;
+        white-space: pre-wrap;
+      }
+
+      .fixture {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Repeat Tests</h1>
+    <pre id="results">Running...</pre>
+
+    <main id="app" class="fixture">
+      <section id="homeScreen" class="screen active">
+        <h2 id="kidTitle">What would you like to watch?</h2>
+        <button id="kidModeButton" type="button"></button>
+        <button id="parentModeButton" type="button"></button>
+      </section>
+      <section id="unlockScreen" class="screen">
+        <button id="unlockBackButton" type="button"></button>
+        <form id="unlockForm">
+          <input id="unlockCode">
+          <p id="unlockMessage"></p>
+        </form>
+      </section>
+      <section id="parentScreen" class="screen">
+        <input id="settingCode">
+        <input id="settingAudioFeedback" type="checkbox">
+        <input id="settingYouTubeControls" type="checkbox">
+        <input id="settingSpeechRate" type="range">
+        <output id="speechRateOutput"></output>
+        <select id="settingTheme"><option value="dark">Dark</option><option value="light">Light</option></select>
+        <select id="settingVideoGridOrder"><option value="manual">Manual</option><option value="alpha">A to Z</option></select>
+        <button id="saveSettingsButton" type="button"></button>
+        <p id="settingsMessage"></p>
+        <p id="storageMessage"></p>
+        <form id="addVideoForm">
+          <input id="videoTitle">
+          <input id="videoTags">
+          <input id="videoUrl">
+        </form>
+        <p id="addVideoMessage"></p>
+        <ol id="parentVideoList"></ol>
+        <p id="emptyParentMessage"></p>
+        <button id="clearAllButton" type="button"></button>
+        <textarea id="importToml"></textarea>
+        <textarea id="exportToml"></textarea>
+        <button id="importTomlButton" type="button"></button>
+        <button id="uploadTomlButton" type="button"></button>
+        <input id="tomlFileInput" type="file">
+        <button id="copyTomlButton" type="button"></button>
+        <button id="downloadTomlButton" type="button"></button>
+        <p id="tomlMessage"></p>
+      </section>
+      <section id="kidScreen" class="screen">
+        <button id="kidParentButton" type="button"></button>
+        <section id="favoritesSection"><div id="favoritesRow"></div></section>
+        <div id="kidVideoGrid"></div>
+        <p id="emptyKidMessage"></p>
+      </section>
+      <section id="playerScreen" class="screen">
+        <div id="playerFrameWrap"></div>
+        <button id="favoriteButton" type="button"><span class="favorite-icon"></span><span class="player-button-label"></span></button>
+        <button id="similarButton" type="button"></button>
+        <button id="againButton" type="button"></button>
+        <button id="playerHomeButton" type="button"></button>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+      const tests = [];
+      const results = document.getElementById("results");
+
+      function test(name, fn) {
+        tests.push({ name, fn });
+      }
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message);
+      }
+
+      test("parseYouTubeUrl strips share and playlist params", () => {
+        const result = parseYouTubeUrl("https://youtu.be/AbCdEfGhI_j?si=track&list=ignored");
+        assert(result.ok, result.message);
+        assert(result.id === "AbCdEfGhI_j", "video ID should be parsed");
+        assert(result.canonicalUrl === "https://www.youtube.com/watch?v=AbCdEfGhI_j", "URL should be canonical");
+      });
+
+      test("parseRepeatToml rejects invalid favorite values", () => {
+        const result = parseRepeatToml([
+          "[settings]",
+          'unlockCode = "2468"',
+          "",
+          "[[videos]]",
+          'title = "Bad favorite"',
+          'url = "https://www.youtube.com/watch?v=AbCdEfGhI_j"',
+          'favorite = "yes"'
+        ].join("\n"));
+        assert(!result.ok, "invalid favorite should fail");
+      });
+
+      test("writeRepeatToml round trips tags", () => {
+        const text = writeRepeatToml(normalizeState({
+          settings: {},
+          videos: [{
+            id: "AbCdEfGhI_j",
+            title: "Trains",
+            tags: "trains, calm",
+            youtubeUrl: "https://youtu.be/AbCdEfGhI_j",
+            favorite: "true"
+          }]
+        }));
+        assert(text.includes('tags = "trains, calm"'), "tags should export");
+        assert(text.includes('favorite = "true"'), "favorite should export");
+      });
+
+      test("normalizeState drops malformed stored video IDs", () => {
+        const normalized = normalizeState({
+          settings: {},
+          videos: [
+            { id: "bad", title: "Bad" },
+            { id: "AbCdEfGhI_j", title: "Good" }
+          ]
+        });
+        assert(normalized.videos.length === 1, "only valid video should remain");
+      });
+
+      test("findSimilarVideo picks next shared-tag video", () => {
+        state = normalizeState({
+          settings: {},
+          videos: [
+            { id: "AbCdEfGhI_j", title: "One", tags: "trains" },
+            { id: "BbCdEfGhI_j", title: "Two", tags: "music" },
+            { id: "CbCdEfGhI_j", title: "Three", tags: "trains, calm" }
+          ]
+        });
+        assert(findSimilarVideo("AbCdEfGhI_j").id === "CbCdEfGhI_j", "shared tag video should be selected");
+      });
+
+      const output = [];
+      let failures = 0;
+      tests.forEach(({ name, fn }) => {
+        try {
+          fn();
+          output.push(`PASS ${name}`);
+        } catch (error) {
+          failures += 1;
+          output.push(`FAIL ${name}: ${error.message}`);
+        }
+      });
+
+      results.textContent = output.join("\n");
+      if (failures > 0) {
+        document.body.style.background = "#ffe9e9";
+        throw new Error(`${failures} test(s) failed`);
+      }
+      document.body.style.background = "#ecfff0";
+    </script>
+  </body>
+</html>
