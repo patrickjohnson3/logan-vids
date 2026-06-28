@@ -246,7 +246,7 @@ function normalizeState(raw) {
         tags: normalizeTags(video.tags || ""),
         youtubeUrl: normalizeStoredYouTubeUrl(video),
         embedUrl: String(video.embedUrl || buildEmbedUrl(video.id)),
-        favorite: String(video.favorite || "false")
+        favorite: video.favorite === "true" ? "true" : "false"
       }));
   }
 
