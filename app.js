@@ -87,7 +87,7 @@ const els = {
   kidVideoGrid: document.getElementById("kidVideoGrid"),
   emptyKidMessage: document.getElementById("emptyKidMessage"),
   playerFrameWrap: document.getElementById("playerFrameWrap"),
-  keepButton: document.getElementById("keepButton"),
+  favoriteButton: document.getElementById("favoriteButton"),
   moreButton: document.getElementById("moreButton"),
   againButton: document.getElementById("againButton"),
   playerHomeButton: document.getElementById("playerHomeButton")
@@ -140,7 +140,7 @@ function bindEvents() {
   els.tomlFileInput.addEventListener("change", importTomlFromFile);
   els.copyTomlButton.addEventListener("click", copyToml);
   els.downloadTomlButton.addEventListener("click", downloadToml);
-  els.keepButton.addEventListener("click", toggleCurrentFavorite);
+  els.favoriteButton.addEventListener("click", toggleCurrentFavorite);
   els.moreButton.addEventListener("click", playTaggedVideo);
   els.againButton.addEventListener("click", playCurrentAgain);
   els.playerHomeButton.addEventListener("click", returnToKidMode);
@@ -621,10 +621,10 @@ function renderPlayerControls(video) {
   const isFavorite = Boolean(video && video.favorite === "true");
   const label = isFavorite ? "Remove" : "Favorites";
   const taggedVideo = video ? findTaggedVideo(video.id) : null;
-  els.keepButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";
-  els.keepButton.querySelector(".player-button-label").textContent = label;
-  els.keepButton.setAttribute("aria-pressed", String(isFavorite));
-  els.keepButton.setAttribute(
+  els.favoriteButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";
+  els.favoriteButton.querySelector(".player-button-label").textContent = label;
+  els.favoriteButton.setAttribute("aria-pressed", String(isFavorite));
+  els.favoriteButton.setAttribute(
     "aria-label",
     isFavorite ? "Remove from favorites" : "Add to favorites"
   );
