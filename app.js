@@ -238,7 +238,7 @@ function normalizeState(raw) {
 
   if (Array.isArray(raw && raw.videos)) {
     normalized.videos = raw.videos
-      .filter((video) => video && typeof video.id === "string")
+      .filter((video) => video && isValidVideoId(video.id))
       .map((video) => ({
         id: video.id,
         title: String(video.title || "Untitled"),
@@ -765,10 +765,14 @@ function parseYouTubeUrl(value) {
 }
 
 function validateVideoId(id) {
-  if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) {
+  if (!isValidVideoId(id)) {
     return { ok: false, message: "That YouTube video ID does not look valid." };
   }
   return { ok: true, id, canonicalUrl: buildCanonicalWatchUrl(id) };
+}
+
+function isValidVideoId(id) {
+  return typeof id === "string" && /^[A-Za-z0-9_-]{11}$/.test(id);
 }
 
 function buildCanonicalWatchUrl(id) {
