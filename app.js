@@ -633,7 +633,7 @@ function renderPlayerControls(video) {
   els.moreButton.disabled = !taggedVideo;
   els.moreButton.setAttribute(
     "aria-label",
-    taggedVideo ? `More like ${video.title}` : "No similar videos"
+    taggedVideo ? `Similar to ${video.title}` : "No similar videos"
   );
 }
 
