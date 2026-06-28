@@ -1125,7 +1125,27 @@ function normalizeSettings(settings) {
     if (typeof settings[key] === "string") normalized[key] = settings[key];
   });
 
-  return validateSettings(normalized) ? cloneDefaultState().settings : normalized;
+  const defaults = cloneDefaultState().settings;
+  if (!/^\d{4,12}$/.test(normalized.unlockCode)) {
+    normalized.unlockCode = defaults.unlockCode;
+  }
+  if (!isAllowedValue(normalized.audioFeedback, BOOLEAN_VALUES)) {
+    normalized.audioFeedback = defaults.audioFeedback;
+  }
+  if (!isAllowedValue(normalized.youtubeControls, BOOLEAN_VALUES)) {
+    normalized.youtubeControls = defaults.youtubeControls;
+  }
+  const speechRate = Number(normalized.speechRate);
+  if (!Number.isFinite(speechRate) || speechRate < 0.6 || speechRate > 1.2) {
+    normalized.speechRate = defaults.speechRate;
+  }
+  if (!isAllowedValue(normalized.theme, THEME_VALUES)) {
+    normalized.theme = defaults.theme;
+  }
+  if (!isAllowedValue(normalized.videoGridOrder, VIDEO_GRID_ORDER_VALUES)) {
+    normalized.videoGridOrder = defaults.videoGridOrder;
+  }
+  return normalized;
 }
 
 function normalizeVideo(video) {
