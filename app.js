@@ -240,15 +240,8 @@ function normalizeState(raw) {
 
   if (Array.isArray(raw && raw.videos)) {
     normalized.videos = raw.videos
-      .filter((video) => video && isValidVideoId(video.id))
-      .map((video) => ({
-        id: video.id,
-        title: String(video.title || "Untitled"),
-        tags: normalizeTags(video.tags || ""),
-        youtubeUrl: normalizeStoredYouTubeUrl(video),
-        embedUrl: String(video.embedUrl || buildEmbedUrl(video.id)),
-        favorite: video.favorite === "true" ? "true" : "false"
-      }));
+      .map(normalizeVideo)
+      .filter(Boolean);
   }
 
   return normalized;
@@ -482,14 +475,13 @@ function addVideoFromForm(event) {
   }
 
   updateState((draft) => {
-    draft.videos.push({
+    draft.videos.push(normalizeVideo({
       id: result.id,
       title,
       tags,
       youtubeUrl: result.canonicalUrl,
-      embedUrl: buildEmbedUrl(result.id),
       favorite: "false"
-    });
+    }));
   });
 
   els.addVideoForm.reset();
@@ -1056,12 +1048,11 @@ function normalizeImportedVideos(videos) {
       title: video.title,
       tags,
       youtubeUrl: parsedUrl.canonicalUrl,
-      embedUrl: buildEmbedUrl(parsedUrl.id),
       favorite: video.favorite === "true" ? "true" : "false"
     });
   }
 
-  return { ok: true, videos: normalizedVideos };
+  return { ok: true, videos: normalizedVideos.map(normalizeVideo) };
 }
 
 function validateSettings(settings) {
@@ -1100,6 +1091,18 @@ function normalizeSettings(settings) {
   });
 
   return validateSettings(normalized) ? cloneDefaultState().settings : normalized;
+}
+
+function normalizeVideo(video) {
+  if (!video || !isValidVideoId(video.id)) return null;
+  return {
+    id: video.id,
+    title: String(video.title || "Untitled"),
+    tags: normalizeTags(video.tags || ""),
+    youtubeUrl: normalizeStoredYouTubeUrl(video),
+    embedUrl: buildEmbedUrl(video.id),
+    favorite: video.favorite === "true" ? "true" : "false"
+  };
 }
 
 function failToml(lineNumber, message) {
