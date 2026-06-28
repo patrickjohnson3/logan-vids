@@ -2,6 +2,7 @@
 
 const STORAGE_KEY = "repeat.runtimeState.v1";
 const MAX_TITLE_LENGTH = 48;
+const MAX_TAGS_LENGTH = 120;
 const MAX_TOML_FILE_BYTES = 256 * 1024;
 const MESSAGES = {
   storageUnavailable: "Storage is unavailable. Changes will be lost when this page closes.",
@@ -61,6 +62,7 @@ const els = {
   storageMessage: document.getElementById("storageMessage"),
   addVideoForm: document.getElementById("addVideoForm"),
   videoTitle: document.getElementById("videoTitle"),
+  videoTags: document.getElementById("videoTags"),
   videoUrl: document.getElementById("videoUrl"),
   addVideoMessage: document.getElementById("addVideoMessage"),
   parentVideoList: document.getElementById("parentVideoList"),
@@ -236,6 +238,7 @@ function normalizeState(raw) {
       .map((video) => ({
         id: video.id,
         title: String(video.title || "Untitled"),
+        tags: normalizeTags(video.tags || ""),
         youtubeUrl: normalizeStoredYouTubeUrl(video),
         embedUrl: String(video.embedUrl || buildEmbedUrl(video.id)),
         favorite: String(video.favorite || "false")
@@ -279,9 +282,12 @@ function renderParent() {
     const url = document.createElement("p");
     url.className = "parent-video-url";
     url.textContent = video.youtubeUrl;
+    const tags = document.createElement("p");
+    tags.className = "parent-video-tags";
+    tags.textContent = video.tags ? `Tags: ${video.tags}` : "No tags";
 
     if (editingVideoId === video.id) {
-      item.append(url, makeVideoTitleEditor(video));
+      item.append(url, makeVideoMetadataEditor(video));
       els.parentVideoList.append(item);
       return;
     }
@@ -295,24 +301,34 @@ function renderParent() {
       makeSmallButton("Delete", () => deleteVideo(video.id), false, "danger-action")
     );
 
-    item.append(title, url, actions);
+    item.append(title, tags, url, actions);
     els.parentVideoList.append(item);
   });
 }
 
-function makeVideoTitleEditor(video) {
+function makeVideoMetadataEditor(video) {
   const form = document.createElement("form");
   form.className = "parent-video-edit";
 
-  const label = document.createElement("label");
-  label.textContent = "Title";
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = video.title;
-  input.maxLength = MAX_TITLE_LENGTH;
-  input.required = true;
-  input.addEventListener("input", () => input.setCustomValidity(""));
-  label.append(input);
+  const titleLabel = document.createElement("label");
+  titleLabel.textContent = "Title";
+  const titleInput = document.createElement("input");
+  titleInput.type = "text";
+  titleInput.value = video.title;
+  titleInput.maxLength = MAX_TITLE_LENGTH;
+  titleInput.required = true;
+  titleInput.addEventListener("input", () => titleInput.setCustomValidity(""));
+  titleLabel.append(titleInput);
+
+  const tagsLabel = document.createElement("label");
+  tagsLabel.textContent = "Tags";
+  const tagsInput = document.createElement("input");
+  tagsInput.type = "text";
+  tagsInput.value = video.tags || "";
+  tagsInput.maxLength = MAX_TAGS_LENGTH;
+  tagsInput.placeholder = "trains, music, calm";
+  tagsInput.addEventListener("input", () => tagsInput.setCustomValidity(""));
+  tagsLabel.append(tagsInput);
 
   const actions = document.createElement("div");
   actions.className = "parent-video-edit-actions";
@@ -330,9 +346,9 @@ function makeVideoTitleEditor(video) {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    saveVideoTitle(video.id, input);
+    saveVideoMetadata(video.id, titleInput, tagsInput);
   });
-  form.append(label, actions);
+  form.append(titleLabel, tagsLabel, actions);
   return form;
 }
 
@@ -418,6 +434,7 @@ function saveSettingsFromForm() {
 function addVideoFromForm(event) {
   event.preventDefault();
   const title = els.videoTitle.value.trim();
+  const tags = normalizeTags(els.videoTags.value);
   const url = els.videoUrl.value.trim();
   const result = parseYouTubeUrl(url);
 
@@ -428,6 +445,12 @@ function addVideoFromForm(event) {
 
   if (title.length > MAX_TITLE_LENGTH) {
     setMessage(els.addVideoMessage, `Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`);
+    return;
+  }
+
+  const tagsError = validateTags(tags);
+  if (tagsError) {
+    setMessage(els.addVideoMessage, tagsError);
     return;
   }
 
@@ -445,6 +468,7 @@ function addVideoFromForm(event) {
     draft.videos.push({
       id: result.id,
       title,
+      tags,
       youtubeUrl: result.canonicalUrl,
       embedUrl: buildEmbedUrl(result.id),
       favorite: "false"
@@ -485,25 +509,51 @@ function startEditingVideo(id) {
   els.parentVideoList.querySelector("input")?.focus();
 }
 
-function saveVideoTitle(id, input) {
-  const title = input.value.trim();
+function saveVideoMetadata(id, titleInput, tagsInput) {
+  const title = titleInput.value.trim();
+  const tags = normalizeTags(tagsInput.value);
   if (!title) {
-    input.setCustomValidity("Add a title.");
-    input.reportValidity();
+    titleInput.setCustomValidity("Add a title.");
+    titleInput.reportValidity();
     return;
   }
 
   if (title.length > MAX_TITLE_LENGTH) {
-    input.setCustomValidity(`Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`);
-    input.reportValidity();
+    titleInput.setCustomValidity(`Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`);
+    titleInput.reportValidity();
+    return;
+  }
+
+  const tagsError = validateTags(tags);
+  if (tagsError) {
+    tagsInput.setCustomValidity(tagsError);
+    tagsInput.reportValidity();
     return;
   }
 
   editingVideoId = null;
   updateState((draft) => {
     const video = draft.videos.find((item) => item.id === id);
-    if (video) video.title = title;
+    if (video) {
+      video.title = title;
+      video.tags = tags;
+    }
   });
+}
+
+function normalizeTags(value) {
+  return String(value)
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function validateTags(tags) {
+  if (tags.length > MAX_TAGS_LENGTH) {
+    return `Use tags with ${MAX_TAGS_LENGTH} characters or fewer.`;
+  }
+  return "";
 }
 
 // Player lifecycle
@@ -867,7 +917,7 @@ function parseToml(text) {
         return failToml(lineNumber, `Duplicate video value "${key}".`);
       }
       videoKeys.add(key);
-      if (!["title", "url", "icon", "favorite"].includes(key)) {
+      if (!["title", "url", "icon", "favorite", "tags"].includes(key)) {
         return failToml(lineNumber, `Unknown video value "${key}".`);
       }
       // Legacy icon values are accepted but ignored: videos no longer have icons.
@@ -915,6 +965,12 @@ function normalizeImportedVideos(videos) {
       return { ok: false, message: `Video ${index + 1} has a title longer than ${MAX_TITLE_LENGTH} characters.` };
     }
 
+    const tags = normalizeTags(video.tags || "");
+    const tagsError = validateTags(tags);
+    if (tagsError) {
+      return { ok: false, message: `Video ${index + 1}: ${tagsError}` };
+    }
+
     const parsedUrl = parseYouTubeUrl(video.url);
     if (!parsedUrl.ok) {
       return { ok: false, message: `Video ${index + 1}: ${parsedUrl.message}` };
@@ -928,6 +984,7 @@ function normalizeImportedVideos(videos) {
     normalizedVideos.push({
       id: parsedUrl.id,
       title: video.title,
+      tags,
       youtubeUrl: parsedUrl.canonicalUrl,
       embedUrl: buildEmbedUrl(parsedUrl.id),
       favorite: video.favorite === "true" ? "true" : "false"
@@ -982,6 +1039,7 @@ function writeToml(currentState) {
       "",
       "[[videos]]",
       `title = "${escapeTomlString(video.title)}"`,
+      `tags = "${escapeTomlString(video.tags || "")}"`,
       `url = "${escapeTomlString(video.youtubeUrl)}"`,
       `favorite = "${escapeTomlString(video.favorite)}"`
     );

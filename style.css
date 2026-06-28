@@ -332,6 +332,12 @@ textarea {
   font-weight: 700;
 }
 
+.parent-video-tags {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .parent-video-url {
   margin: 4px 0 0;
   color: var(--muted);

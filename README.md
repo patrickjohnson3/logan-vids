@@ -77,11 +77,12 @@ theme = "dark"
 
 [[videos]]
 title = "Example video"
+tags = "trains, calm"
 url = "https://www.youtube.com/watch?v=AbCdEfGhI_j"
 favorite = "false"
 ```
 
-Malformed TOML, unsupported keys, duplicate YouTube videos, and unsupported YouTube URLs are rejected with a parent-facing message. Exported TOML always reflects the currently saved local state.
+Malformed TOML, unsupported keys, overlong tags, duplicate YouTube videos, and unsupported YouTube URLs are rejected with a parent-facing message. Exported TOML always reflects the currently saved local state.
 
 ## Project structure
 
