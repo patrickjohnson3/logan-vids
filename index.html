@@ -85,6 +85,16 @@
           <p id="storageMessage" class="message" role="status"></p>
         </section>
 
+        <section class="panel" aria-labelledby="tomlTitle">
+          <h3 id="tomlTitle">TOML</h3>
+          <div class="button-row toml-actions">
+            <button id="uploadTomlButton" class="secondary-action" type="button">Upload TOML</button>
+            <button id="downloadTomlButton" class="secondary-action" type="button">Download TOML</button>
+          </div>
+          <input id="tomlFileInput" type="file" accept=".toml,text/plain" hidden>
+          <p id="tomlMessage" class="message" role="status"></p>
+        </section>
+
         <section class="panel" aria-labelledby="addVideoTitle">
           <h3 id="addVideoTitle">Add video</h3>
           <form id="addVideoForm" class="video-form">
@@ -112,16 +122,6 @@
           </div>
           <ol id="parentVideoList" class="parent-video-list"></ol>
           <p id="emptyParentMessage" class="empty-note">No videos yet.</p>
-        </section>
-
-        <section class="panel" aria-labelledby="tomlTitle">
-          <h3 id="tomlTitle">TOML</h3>
-          <div class="button-row">
-            <button id="uploadTomlButton" class="secondary-action" type="button">Upload TOML</button>
-            <button id="downloadTomlButton" class="secondary-action" type="button">Download TOML</button>
-          </div>
-          <input id="tomlFileInput" type="file" accept=".toml,text/plain" hidden>
-          <p id="tomlMessage" class="message" role="status"></p>
         </section>
       </section>
 
