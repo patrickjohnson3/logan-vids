@@ -44,17 +44,14 @@ function renderPlayer() {
 function toggleCurrentFavorite() {
   const video = findVideo(currentVideoId);
   if (!video) return;
-  const isFavorite = video.favorite === "true";
-  updateState((draft) => {
-    const currentVideo = draft.videos.find((item) => item.id === currentVideoId);
-    currentVideo.favorite = isFavorite ? "false" : "true";
-  });
+  const isFavorite = isFavoriteVideo(video);
+  setVideoFavorite(currentVideoId, !isFavorite);
   renderPlayerControls(findVideo(currentVideoId));
   speak(isFavorite ? "remove" : "favorites");
 }
 
 function renderPlayerControls(video) {
-  const isFavorite = Boolean(video && video.favorite === "true");
+  const isFavorite = isFavoriteVideo(video);
   const label = isFavorite ? "Remove" : "Favorites";
   const similarVideo = video ? findSimilarVideo(video.id) : null;
   els.favoriteButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";

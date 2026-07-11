@@ -234,19 +234,17 @@ function addVideoFromForm(event) {
     return;
   }
 
-  if (state.videos.some((video) => video.id === result.id)) {
+  if (videoExists(result.id)) {
     setMessage(els.addVideoMessage, "That video is already saved.");
     return;
   }
 
-  updateState((draft) => {
-    draft.videos.push(normalizeVideo({
-      id: result.id,
-      title,
-      tags,
-      youtubeUrl: result.canonicalUrl,
-      favorite: "false"
-    }));
+  addStoredVideo({
+    id: result.id,
+    title,
+    tags,
+    youtubeUrl: result.canonicalUrl,
+    favorite: "false"
   });
 
   els.addVideoForm.reset();
@@ -254,12 +252,7 @@ function addVideoFromForm(event) {
 }
 
 function moveVideo(index, direction) {
-  const nextIndex = index + direction;
-  if (nextIndex < 0 || nextIndex >= state.videos.length) return;
-  updateState((draft) => {
-    const [video] = draft.videos.splice(index, 1);
-    draft.videos.splice(nextIndex, 0, video);
-  });
+  moveStoredVideo(index, direction);
 }
 
 function deleteVideo(id) {
@@ -270,9 +263,7 @@ function deleteVideo(id) {
     return;
   }
   if (editingVideoId === id) editingVideoId = null;
-  updateState((draft) => {
-    draft.videos = draft.videos.filter((video) => video.id !== id);
-  });
+  removeStoredVideo(id);
   setMessage(els.savedVideosMessage, "Video deleted.");
 }
 
@@ -282,9 +273,7 @@ function clearAllVideos() {
     return;
   }
   editingVideoId = null;
-  updateState((draft) => {
-    draft.videos = [];
-  });
+  clearStoredVideos();
   setMessage(els.savedVideosMessage, "All videos cleared.");
 }
 
@@ -317,12 +306,9 @@ function saveVideoMetadata(id, titleInput, tagsInput) {
   }
 
   editingVideoId = null;
-  updateState((draft) => {
-    const video = draft.videos.find((item) => item.id === id);
-    if (video) {
-      video.title = title;
-      video.tags = tags;
-    }
+  updateStoredVideoMetadata(id, {
+    title,
+    tags
   });
 }
 

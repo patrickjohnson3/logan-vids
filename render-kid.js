@@ -6,17 +6,17 @@ function renderKid() {
   els.favoritesRow.innerHTML = "";
   els.kidVideoGrid.innerHTML = "";
 
-  const favorites = state.videos.filter((video) => video.favorite === "true");
+  const favorites = getFavorites();
   const approvedVideos = getKidGridVideos();
   els.favoritesSection.hidden = favorites.length === 0;
-  els.emptyKidMessage.hidden = state.videos.length > 0;
+  els.emptyKidMessage.hidden = getVideoCount() > 0;
 
   favorites.forEach((video) => els.favoritesRow.append(makeVideoTile(video)));
   approvedVideos.forEach((video) => els.kidVideoGrid.append(makeVideoTile(video)));
 }
 
 function getKidGridVideos() {
-  const videos = state.videos.filter((video) => video.favorite !== "true");
+  const videos = getNonFavoriteVideos();
   if (state.settings.videoGridOrder !== "alpha") return videos;
 
   return videos.slice().sort((first, second) =>
@@ -40,7 +40,7 @@ function makeVideoTile(video) {
   button.className = "video-tile";
   button.setAttribute(
     "aria-label",
-    video.favorite === "true" ? `${video.title}, favorite` : video.title
+    isFavoriteVideo(video) ? `${video.title}, favorite` : video.title
   );
 
   const thumbnail = document.createElement("img");
@@ -55,7 +55,7 @@ function makeVideoTile(video) {
   title.textContent = video.title;
 
   button.append(thumbnail, title);
-  if (video.favorite === "true") {
+  if (isFavoriteVideo(video)) {
     const badge = document.createElement("span");
     badge.className = "favorite-badge";
     badge.setAttribute("aria-hidden", "true");

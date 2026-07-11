@@ -94,6 +94,75 @@ function replaceState(nextState) {
   return persistState();
 }
 
+function getVideos() {
+  return state.videos;
+}
+
+function getVideoCount() {
+  return getVideos().length;
+}
+
+function getFavorites() {
+  return getVideos().filter(isFavoriteVideo);
+}
+
+function getNonFavoriteVideos() {
+  return getVideos().filter((video) => !isFavoriteVideo(video));
+}
+
+function isFavoriteVideo(video) {
+  return Boolean(video && video.favorite === "true");
+}
+
+function videoExists(id) {
+  return getVideos().some((video) => video.id === id);
+}
+
+function addStoredVideo(video) {
+  return updateState((draft) => {
+    const normalized = normalizeVideo(video);
+    if (normalized) draft.videos.push(normalized);
+  });
+}
+
+function moveStoredVideo(index, direction) {
+  const nextIndex = index + direction;
+  if (nextIndex < 0 || nextIndex >= getVideoCount()) return false;
+
+  return updateState((draft) => {
+    const [video] = draft.videos.splice(index, 1);
+    draft.videos.splice(nextIndex, 0, video);
+  });
+}
+
+function removeStoredVideo(id) {
+  return updateState((draft) => {
+    draft.videos = draft.videos.filter((video) => video.id !== id);
+  });
+}
+
+function clearStoredVideos() {
+  return updateState((draft) => {
+    draft.videos = [];
+  });
+}
+
+function updateStoredVideoMetadata(id, metadata) {
+  return updateState((draft) => {
+    const video = draft.videos.find((item) => item.id === id);
+    if (!video) return;
+    video.title = metadata.title;
+    video.tags = metadata.tags;
+  });
+}
+
+function setVideoFavorite(id, isFavorite) {
+  return updateState((draft) => {
+    const video = draft.videos.find((item) => item.id === id);
+    if (video) video.favorite = isFavorite ? "true" : "false";
+  });
+}
+
 function cloneDefaultState() {
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
 }
@@ -154,7 +223,7 @@ function sharesAnyTag(tagSet, value) {
 // Video lookup helpers.
 
 function findVideo(id) {
-  return state.videos.find((video) => video.id === id);
+  return getVideos().find((video) => video.id === id);
 }
 
 function findSimilarVideo(id) {
@@ -164,10 +233,11 @@ function findSimilarVideo(id) {
   const currentTags = makeTagSet(currentVideo.tags);
   if (currentTags.size === 0) return null;
 
-  const currentIndex = state.videos.findIndex((video) => video.id === id);
-  for (let offset = 1; offset < state.videos.length; offset += 1) {
-    const candidate = state.videos[(currentIndex + offset) % state.videos.length];
-    if (candidate.favorite === "true") continue;
+  const videos = getVideos();
+  const currentIndex = videos.findIndex((video) => video.id === id);
+  for (let offset = 1; offset < videos.length; offset += 1) {
+    const candidate = videos[(currentIndex + offset) % videos.length];
+    if (isFavoriteVideo(candidate)) continue;
     if (sharesAnyTag(currentTags, candidate.tags)) return candidate;
   }
 

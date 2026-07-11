@@ -20,9 +20,9 @@ function renderParentSettings() {
 
 function renderParentVideoList() {
   els.parentVideoList.innerHTML = "";
-  els.emptyParentMessage.hidden = state.videos.length > 0;
+  els.emptyParentMessage.hidden = getVideoCount() > 0;
 
-  state.videos.forEach((video, index) => {
+  getVideos().forEach((video, index) => {
     const item = document.createElement("li");
     item.className = "parent-video-item";
 
@@ -47,7 +47,7 @@ function renderParentVideoList() {
     actions.append(
       makeSmallButton("Edit", () => startEditingVideo(video.id)),
       makeSmallButton("Up", () => moveVideo(index, -1), index === 0),
-      makeSmallButton("Down", () => moveVideo(index, 1), index === state.videos.length - 1),
+      makeSmallButton("Down", () => moveVideo(index, 1), index === getVideoCount() - 1),
       makeSmallButton("Delete", () => deleteVideo(video.id), false, "danger-action")
     );
 
