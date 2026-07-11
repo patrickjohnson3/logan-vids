@@ -300,6 +300,10 @@ textarea {
   border-color: var(--accent);
 }
 
+.video-submit-button {
+  justify-self: start;
+}
+
 .danger-action {
   border-color: var(--danger);
   color: var(--danger);
@@ -574,10 +578,6 @@ textarea {
   .video-submit-button,
   #addVideoMessage {
     grid-column: 1 / -1;
-  }
-
-  .video-submit-button {
-    justify-self: start;
   }
 
   .settings-grid,
