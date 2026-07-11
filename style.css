@@ -300,10 +300,6 @@ textarea {
   border-color: var(--accent);
 }
 
-.video-form .primary-action {
-  justify-self: start;
-}
-
 .danger-action {
   border-color: var(--danger);
   color: var(--danger);
@@ -572,6 +568,16 @@ textarea {
   .settings-grid,
   .video-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .video-url-field,
+  .video-submit-button,
+  #addVideoMessage {
+    grid-column: 1 / -1;
+  }
+
+  .video-submit-button {
+    justify-self: start;
   }
 
   .settings-grid,
