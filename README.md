@@ -58,7 +58,7 @@ The player iframe is sandboxed and has no fullscreen, sharing, clipboard, Pictur
 
 Runtime state is stored only in browser `localStorage` under `repeat.runtimeState.v1`. TOML is the portable format for parent-managed backup and transfer.
 
-In Parent Mode, use the TOML area to import, copy, or download `safe-loop-config.toml`. The parser deliberately supports only:
+In Parent Mode, use the TOML area to upload a TOML file or download `safe-loop-config.toml`. The parser deliberately supports only:
 
 - `[settings]`
 - `[[videos]]`
@@ -113,4 +113,4 @@ Before sharing a build, verify these flows in Android Chrome:
 5. Switch Video grid order between Manual and A to Z, then confirm Kid Mode reflects the selected order.
 6. Import a valid TOML file, cancel the replacement warning once, then confirm a second import replaces settings, videos, favorites, and tags.
 7. Import TOML with a duplicate key, invalid setting, invalid URL, invalid favorite value, overlong title, and overlong tags; each must show an error without changing saved data.
-8. Download, copy, and upload `safe-loop-config.toml`, then confirm the configuration round-trips correctly.
+8. Download and upload `safe-loop-config.toml`, then confirm the configuration round-trips correctly.

@@ -23,7 +23,7 @@ const MESSAGES = {
   importSessionOnly: "TOML imported for this session, but it could not be saved.",
   unreadableFile: "That file could not be read.",
   fileTooLarge: "Choose a TOML file smaller than 256 KB.",
-  copyFailed: "Copy did not work. Select the TOML and copy it manually."
+  tomlDownloaded: "TOML downloaded."
 };
 const IS_TEST_MODE = typeof window !== "undefined" && window.REPEAT_TEST_MODE === true;
 let storageWarning = "";
@@ -82,12 +82,8 @@ const els = {
   parentVideoList: document.getElementById("parentVideoList"),
   emptyParentMessage: document.getElementById("emptyParentMessage"),
   clearAllButton: document.getElementById("clearAllButton"),
-  importToml: document.getElementById("importToml"),
-  exportToml: document.getElementById("exportToml"),
-  importTomlButton: document.getElementById("importTomlButton"),
   uploadTomlButton: document.getElementById("uploadTomlButton"),
   tomlFileInput: document.getElementById("tomlFileInput"),
-  copyTomlButton: document.getElementById("copyTomlButton"),
   downloadTomlButton: document.getElementById("downloadTomlButton"),
   tomlMessage: document.getElementById("tomlMessage"),
   favoritesSection: document.getElementById("favoritesSection"),
@@ -143,10 +139,8 @@ function bindEvents() {
   els.saveSettingsButton.addEventListener("click", saveSettingsFromForm);
   els.addVideoForm.addEventListener("submit", addVideoFromForm);
   els.clearAllButton.addEventListener("click", clearAllVideos);
-  els.importTomlButton.addEventListener("click", importTomlFromTextarea);
   els.uploadTomlButton.addEventListener("click", () => els.tomlFileInput.click());
   els.tomlFileInput.addEventListener("change", importTomlFromFile);
-  els.copyTomlButton.addEventListener("click", copyToml);
   els.downloadTomlButton.addEventListener("click", downloadToml);
   els.favoriteButton.addEventListener("click", toggleCurrentFavorite);
   els.similarButton.addEventListener("click", playSimilarVideo);
@@ -296,7 +290,6 @@ function renderParentSettings() {
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;
   els.settingVideoGridOrder.value = state.settings.videoGridOrder;
-  els.exportToml.value = writeRepeatToml(state);
   els.storageMessage.textContent = storageWarning;
 }
 
@@ -867,11 +860,6 @@ function once(callback) {
   };
 }
 
-// TOML input and output
-function importTomlFromTextarea() {
-  importToml(els.importToml.value);
-}
-
 async function importTomlFromFile(event) {
   const [file] = event.target.files;
   if (!file) return;
@@ -884,7 +872,6 @@ async function importTomlFromFile(event) {
 
   try {
     const text = await file.text();
-    els.importToml.value = text;
     importToml(text);
   } catch {
     setMessage(els.tomlMessage, MESSAGES.unreadableFile);
@@ -912,34 +899,6 @@ function importToml(text) {
   );
 }
 
-function copyToml() {
-  const text = writeRepeatToml(state);
-  els.exportToml.value = text;
-
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(
-      () => setMessage(els.tomlMessage, "TOML copied."),
-      () => fallbackCopyToml()
-    );
-  } else {
-    fallbackCopyToml();
-  }
-}
-
-function fallbackCopyToml() {
-  els.exportToml.focus();
-  els.exportToml.select();
-  try {
-    const copied = document.execCommand("copy");
-    setMessage(
-      els.tomlMessage,
-      copied ? "TOML copied." : MESSAGES.copyFailed
-    );
-  } catch {
-    setMessage(els.tomlMessage, MESSAGES.copyFailed);
-  }
-}
-
 function downloadToml() {
   const blob = new Blob([writeRepeatToml(state)], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -950,7 +909,7 @@ function downloadToml() {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-  setMessage(els.tomlMessage, "TOML downloaded.");
+  setMessage(els.tomlMessage, MESSAGES.tomlDownloaded);
 }
 
 function setMessage(element, text) {
