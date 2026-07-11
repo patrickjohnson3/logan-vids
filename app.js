@@ -84,6 +84,7 @@ const els = {
   addVideoMessage: document.getElementById("addVideoMessage"),
   parentVideoList: document.getElementById("parentVideoList"),
   emptyParentMessage: document.getElementById("emptyParentMessage"),
+  savedVideosMessage: document.getElementById("savedVideosMessage"),
   clearAllButton: document.getElementById("clearAllButton"),
   uploadTomlButton: document.getElementById("uploadTomlButton"),
   tomlFileInput: document.getElementById("tomlFileInput"),
@@ -529,26 +530,26 @@ function deleteVideo(id) {
   const video = findVideo(id);
   if (!video) return;
   if (!confirm(`Delete "${video.title}"?`)) {
-    setMessage(els.addVideoMessage, MESSAGES.deleteVideoCancelled);
+    setMessage(els.savedVideosMessage, MESSAGES.deleteVideoCancelled);
     return;
   }
   if (editingVideoId === id) editingVideoId = null;
   updateState((draft) => {
     draft.videos = draft.videos.filter((video) => video.id !== id);
   });
-  setMessage(els.addVideoMessage, "Video deleted.");
+  setMessage(els.savedVideosMessage, "Video deleted.");
 }
 
 function clearAllVideos() {
   if (prompt(MESSAGES.clearAllPrompt) !== "CLEAR") {
-    setMessage(els.addVideoMessage, MESSAGES.clearAllCancelled);
+    setMessage(els.savedVideosMessage, MESSAGES.clearAllCancelled);
     return;
   }
   editingVideoId = null;
   updateState((draft) => {
     draft.videos = [];
   });
-  setMessage(els.addVideoMessage, "All videos cleared.");
+  setMessage(els.savedVideosMessage, "All videos cleared.");
 }
 
 function startEditingVideo(id) {
