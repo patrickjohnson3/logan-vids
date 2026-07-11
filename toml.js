@@ -39,7 +39,7 @@ function importToml(text) {
   const persisted = replaceState(result.state);
   setMessage(
     els.tomlMessage,
-    persisted ? "TOML imported." : MESSAGES.importSessionOnly
+    persisted ? MESSAGES.tomlImported : MESSAGES.importSessionOnly
   );
 }
 

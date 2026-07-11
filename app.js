@@ -105,7 +105,7 @@ function bindEvents() {
       setMessage(els.unlockMessage, "");
       showScreen(SCREEN.parent);
     } else {
-      setMessage(els.unlockMessage, "That code did not work.");
+      setMessage(els.unlockMessage, MESSAGES.unlockFailed);
     }
   });
 
@@ -203,7 +203,7 @@ function saveSettingsFromForm() {
   const persisted = updateState((draft) => {
     draft.settings = normalizeSettings(nextSettings);
   });
-  setMessage(els.settingsMessage, persisted ? "Settings saved." : MESSAGES.storageUnavailable);
+  setMessage(els.settingsMessage, persisted ? MESSAGES.settingsSaved : MESSAGES.storageUnavailable);
 }
 
 function addVideoFromForm(event) {
@@ -214,12 +214,12 @@ function addVideoFromForm(event) {
   const result = parseYouTubeUrl(url);
 
   if (!title) {
-    setMessage(els.addVideoMessage, "Add a title.");
+    setMessage(els.addVideoMessage, MESSAGES.addTitle);
     return;
   }
 
   if (title.length > MAX_TITLE_LENGTH) {
-    setMessage(els.addVideoMessage, `Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`);
+    setMessage(els.addVideoMessage, MESSAGES.titleTooLong);
     return;
   }
 
@@ -235,7 +235,7 @@ function addVideoFromForm(event) {
   }
 
   if (videoExists(result.id)) {
-    setMessage(els.addVideoMessage, "That video is already saved.");
+    setMessage(els.addVideoMessage, MESSAGES.duplicateVideo);
     return;
   }
 
@@ -248,7 +248,7 @@ function addVideoFromForm(event) {
   });
 
   els.addVideoForm.reset();
-  setMessage(els.addVideoMessage, "Video added.");
+  setMessage(els.addVideoMessage, MESSAGES.videoAdded);
 }
 
 function moveVideo(index, direction) {
@@ -264,7 +264,7 @@ function deleteVideo(id) {
   }
   if (editingVideoId === id) editingVideoId = null;
   removeStoredVideo(id);
-  setMessage(els.savedVideosMessage, "Video deleted.");
+  setMessage(els.savedVideosMessage, MESSAGES.videoDeleted);
 }
 
 function clearAllVideos() {
@@ -274,7 +274,7 @@ function clearAllVideos() {
   }
   editingVideoId = null;
   clearStoredVideos();
-  setMessage(els.savedVideosMessage, "All videos cleared.");
+  setMessage(els.savedVideosMessage, MESSAGES.allVideosCleared);
 }
 
 function startEditingVideo(id) {
@@ -287,13 +287,13 @@ function saveVideoMetadata(id, titleInput, tagsInput) {
   const title = titleInput.value.trim();
   const tags = normalizeTags(tagsInput.value);
   if (!title) {
-    titleInput.setCustomValidity("Add a title.");
+    titleInput.setCustomValidity(MESSAGES.addTitle);
     titleInput.reportValidity();
     return;
   }
 
   if (title.length > MAX_TITLE_LENGTH) {
-    titleInput.setCustomValidity(`Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`);
+    titleInput.setCustomValidity(MESSAGES.titleTooLong);
     titleInput.reportValidity();
     return;
   }

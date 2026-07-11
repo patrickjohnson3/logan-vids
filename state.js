@@ -18,13 +18,22 @@ const MESSAGES = {
   storageUnreadable: "Saved data could not be read. Repeat started with an empty library.",
   importConfirmation: "Importing TOML replaces all saved videos, favorites, and settings. Continue?",
   importCancelled: "Import cancelled.",
+  tomlImported: "TOML imported.",
   importSessionOnly: "TOML imported for this session, but it could not be saved.",
   unreadableFile: "That file could not be read.",
   fileTooLarge: "Choose a TOML file smaller than 256 KB.",
   tomlDownloaded: "TOML downloaded.",
   clearAllPrompt: "Type CLEAR to delete all saved videos, favorites, and tags.",
   clearAllCancelled: "Clear all cancelled.",
-  deleteVideoCancelled: "Delete cancelled."
+  deleteVideoCancelled: "Delete cancelled.",
+  unlockFailed: "That code did not work.",
+  settingsSaved: "Settings saved.",
+  addTitle: "Add a title.",
+  titleTooLong: `Use a title with ${MAX_TITLE_LENGTH} characters or fewer.`,
+  duplicateVideo: "That video is already saved.",
+  videoAdded: "Video added.",
+  videoDeleted: "Video deleted.",
+  allVideosCleared: "All videos cleared."
 };
 const IS_TEST_MODE = typeof window !== "undefined" && window.REPEAT_TEST_MODE === true;
 let storageWarning = "";
