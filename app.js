@@ -23,7 +23,9 @@ const MESSAGES = {
   importSessionOnly: "TOML imported for this session, but it could not be saved.",
   unreadableFile: "That file could not be read.",
   fileTooLarge: "Choose a TOML file smaller than 256 KB.",
-  tomlDownloaded: "TOML downloaded."
+  tomlDownloaded: "TOML downloaded.",
+  clearAllPrompt: "Type CLEAR to delete all saved videos, favorites, and tags.",
+  clearAllCancelled: "Clear all cancelled."
 };
 const IS_TEST_MODE = typeof window !== "undefined" && window.REPEAT_TEST_MODE === true;
 let storageWarning = "";
@@ -530,11 +532,15 @@ function deleteVideo(id) {
 }
 
 function clearAllVideos() {
-  if (!confirm("Clear all saved videos?")) return;
+  if (prompt(MESSAGES.clearAllPrompt) !== "CLEAR") {
+    setMessage(els.addVideoMessage, MESSAGES.clearAllCancelled);
+    return;
+  }
   editingVideoId = null;
   updateState((draft) => {
     draft.videos = [];
   });
+  setMessage(els.addVideoMessage, "All videos cleared.");
 }
 
 function startEditingVideo(id) {
