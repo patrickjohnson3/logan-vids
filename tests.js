@@ -71,6 +71,14 @@ test("normalizeState converts legacy setting strings to runtime types", () => {
   assert(normalized.settings.speechRate === 1.1, "speech rate should be numeric");
 });
 
+test("normalizeState migrates unversioned saved state", () => {
+  const normalized = normalizeState({
+    settings: {},
+    videos: []
+  });
+  assert(normalized.schemaVersion === CURRENT_SCHEMA_VERSION, "schema version should be current");
+});
+
 test("findSimilarVideo picks next shared-tag video", () => {
   const previousState = state;
   try {

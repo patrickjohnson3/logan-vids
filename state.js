@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "repeat.runtimeState.v1";
+const CURRENT_SCHEMA_VERSION = 1;
 const MAX_TITLE_LENGTH = 48;
 const MAX_TAGS_LENGTH = 120;
 const BOOLEAN_VALUES = ["true", "false"];
@@ -38,6 +39,7 @@ const MESSAGES = {
 const IS_TEST_MODE = typeof window !== "undefined" && window.REPEAT_TEST_MODE === true;
 let storageWarning = "";
 const DEFAULT_STATE = {
+  schemaVersion: CURRENT_SCHEMA_VERSION,
   settings: {
     unlockCode: "2468",
     audioFeedback: true,
@@ -175,7 +177,9 @@ function cloneDefaultState() {
 }
 
 function normalizeState(raw) {
+  raw = migrateState(raw);
   const normalized = cloneDefaultState();
+  normalized.schemaVersion = CURRENT_SCHEMA_VERSION;
   if (raw && raw.settings) {
     Object.keys(normalized.settings).forEach((key) => {
       if (raw.settings[key] !== undefined) normalized.settings[key] = raw.settings[key];
@@ -190,6 +194,19 @@ function normalizeState(raw) {
   }
 
   return normalized;
+}
+
+function migrateState(raw) {
+  if (!raw || typeof raw !== "object") return {};
+
+  const version = Number(raw.schemaVersion || 0);
+  const migrated = { ...raw };
+
+  if (!Number.isFinite(version) || version < 1) {
+    migrated.schemaVersion = CURRENT_SCHEMA_VERSION;
+  }
+
+  return migrated;
 }
 
 
