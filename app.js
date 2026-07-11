@@ -1,69 +1,82 @@
 "use strict";
 
-// Runtime state and DOM references stay in the main app file.
-
-// Runtime state and DOM references stay together; pure parsing helpers are below.
 let state = loadState();
 let currentVideoId = null;
 let unlockReturnScreen = SCREEN.home;
 let speechPlaybackToken = 0;
 let editingVideoId = null;
 
-const screens = {
-  home: document.getElementById("homeScreen"),
-  unlock: document.getElementById("unlockScreen"),
-  parent: document.getElementById("parentScreen"),
-  kid: document.getElementById("kidScreen"),
-  player: document.getElementById("playerScreen")
-};
-
-const els = {
-  app: document.getElementById("app"),
-  kidModeButton: document.getElementById("kidModeButton"),
-  kidTitle: document.getElementById("kidTitle"),
-  parentModeButton: document.getElementById("parentModeButton"),
-  kidParentButton: document.getElementById("kidParentButton"),
-  unlockBackButton: document.getElementById("unlockBackButton"),
-  unlockForm: document.getElementById("unlockForm"),
-  unlockCode: document.getElementById("unlockCode"),
-  unlockMessage: document.getElementById("unlockMessage"),
-  settingCode: document.getElementById("settingCode"),
-  settingAudioFeedback: document.getElementById("settingAudioFeedback"),
-  settingYouTubeControls: document.getElementById("settingYouTubeControls"),
-  settingSpeechRate: document.getElementById("settingSpeechRate"),
-  speechRateOutput: document.getElementById("speechRateOutput"),
-  settingTheme: document.getElementById("settingTheme"),
-  settingVideoGridOrder: document.getElementById("settingVideoGridOrder"),
-  saveSettingsButton: document.getElementById("saveSettingsButton"),
-  settingsMessage: document.getElementById("settingsMessage"),
-  storageMessage: document.getElementById("storageMessage"),
-  addVideoForm: document.getElementById("addVideoForm"),
-  videoTitle: document.getElementById("videoTitle"),
-  videoTags: document.getElementById("videoTags"),
-  videoUrl: document.getElementById("videoUrl"),
-  addVideoMessage: document.getElementById("addVideoMessage"),
-  parentVideoList: document.getElementById("parentVideoList"),
-  emptyParentMessage: document.getElementById("emptyParentMessage"),
-  savedVideosMessage: document.getElementById("savedVideosMessage"),
-  clearAllButton: document.getElementById("clearAllButton"),
-  uploadTomlButton: document.getElementById("uploadTomlButton"),
-  tomlFileInput: document.getElementById("tomlFileInput"),
-  downloadTomlButton: document.getElementById("downloadTomlButton"),
-  tomlMessage: document.getElementById("tomlMessage"),
-  favoritesSection: document.getElementById("favoritesSection"),
-  favoritesRow: document.getElementById("favoritesRow"),
-  kidVideoGrid: document.getElementById("kidVideoGrid"),
-  emptyKidMessage: document.getElementById("emptyKidMessage"),
-  playerFrameWrap: document.getElementById("playerFrameWrap"),
-  favoriteButton: document.getElementById("favoriteButton"),
-  similarButton: document.getElementById("similarButton"),
-  againButton: document.getElementById("againButton"),
-  playerHomeButton: document.getElementById("playerHomeButton")
-};
+const screens = getScreens();
+const els = getElements();
 
 if (!IS_TEST_MODE) init();
 
 // Startup and event wiring
+function getRequiredElement(id) {
+  const element = document.getElementById(id);
+  if (!element) {
+    throw new Error(`Missing required element: #${id}`);
+  }
+  return element;
+}
+
+function getScreens() {
+  return {
+    home: getRequiredElement("homeScreen"),
+    unlock: getRequiredElement("unlockScreen"),
+    parent: getRequiredElement("parentScreen"),
+    kid: getRequiredElement("kidScreen"),
+    player: getRequiredElement("playerScreen")
+  };
+}
+
+function getElements() {
+  return {
+    app: getRequiredElement("app"),
+    kidModeButton: getRequiredElement("kidModeButton"),
+    kidTitle: getRequiredElement("kidTitle"),
+    parentModeButton: getRequiredElement("parentModeButton"),
+    kidParentButton: getRequiredElement("kidParentButton"),
+    unlockBackButton: getRequiredElement("unlockBackButton"),
+    unlockForm: getRequiredElement("unlockForm"),
+    unlockCode: getRequiredElement("unlockCode"),
+    unlockMessage: getRequiredElement("unlockMessage"),
+    settingCode: getRequiredElement("settingCode"),
+    settingAudioFeedback: getRequiredElement("settingAudioFeedback"),
+    settingYouTubeControls: getRequiredElement("settingYouTubeControls"),
+    settingSpeechRate: getRequiredElement("settingSpeechRate"),
+    speechRateOutput: getRequiredElement("speechRateOutput"),
+    settingTheme: getRequiredElement("settingTheme"),
+    settingVideoGridOrder: getRequiredElement("settingVideoGridOrder"),
+    saveSettingsButton: getRequiredElement("saveSettingsButton"),
+    settingsMessage: getRequiredElement("settingsMessage"),
+    storageMessage: getRequiredElement("storageMessage"),
+    addVideoForm: getRequiredElement("addVideoForm"),
+    videoTitle: getRequiredElement("videoTitle"),
+    videoTags: getRequiredElement("videoTags"),
+    videoUrl: getRequiredElement("videoUrl"),
+    addVideoMessage: getRequiredElement("addVideoMessage"),
+    parentVideoList: getRequiredElement("parentVideoList"),
+    emptyParentMessage: getRequiredElement("emptyParentMessage"),
+    savedVideosMessage: getRequiredElement("savedVideosMessage"),
+    clearAllButton: getRequiredElement("clearAllButton"),
+    uploadTomlButton: getRequiredElement("uploadTomlButton"),
+    tomlFileInput: getRequiredElement("tomlFileInput"),
+    downloadTomlButton: getRequiredElement("downloadTomlButton"),
+    tomlMessage: getRequiredElement("tomlMessage"),
+    favoritesSection: getRequiredElement("favoritesSection"),
+    favoritesRow: getRequiredElement("favoritesRow"),
+    kidVideoGrid: getRequiredElement("kidVideoGrid"),
+    emptyKidMessage: getRequiredElement("emptyKidMessage"),
+    playerFrameWrap: getRequiredElement("playerFrameWrap"),
+    favoriteButton: getRequiredElement("favoriteButton"),
+    similarButton: getRequiredElement("similarButton"),
+    againButton: getRequiredElement("againButton"),
+    playerHomeButton: getRequiredElement("playerHomeButton"),
+    homeButtons: Array.from(document.querySelectorAll("[data-go-home]"))
+  };
+}
+
 function init() {
   applyTheme();
   bindEvents();
@@ -82,7 +95,7 @@ function bindEvents() {
   els.kidParentButton.addEventListener("click", () => openParentUnlock(SCREEN.kid));
   els.unlockBackButton.addEventListener("click", closeParentUnlock);
 
-  document.querySelectorAll("[data-go-home]").forEach((button) => {
+  els.homeButtons.forEach((button) => {
     button.addEventListener("click", () => showScreen(SCREEN.home));
   });
 
