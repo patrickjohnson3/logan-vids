@@ -24,16 +24,6 @@ function getKidGridVideos() {
   );
 }
 
-function makeSmallButton(label, onClick, disabled, className) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = label;
-  button.disabled = disabled;
-  if (className) button.classList.add(className);
-  button.addEventListener("click", onClick);
-  return button;
-}
-
 function makeVideoTile(video) {
   const button = document.createElement("button");
   button.type = "button";
