@@ -182,8 +182,6 @@ function applyTheme() {
   document.body.classList.toggle("light", state.settings.theme === "light");
 }
 
-// Parent actions.
-
 // Parent actions
 function saveSettingsFromForm() {
   const nextSettings = {
