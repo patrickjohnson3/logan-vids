@@ -300,6 +300,10 @@ textarea {
   border-color: var(--accent);
 }
 
+.video-form .primary-action {
+  justify-self: start;
+}
+
 .danger-action {
   border-color: var(--danger);
   color: var(--danger);
