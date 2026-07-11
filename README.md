@@ -100,7 +100,7 @@ No dependencies are needed. To check JavaScript syntax:
 node --check app.js
 ```
 
-To run the no-framework browser helper tests, open `tests.html` directly in a browser or from the local static server.
+To run the no-framework browser helper tests, open `tests.html` directly in a browser or from the local static server. A passing run shows a green page with only `PASS` lines.
 
 ## Manual browser checks
 
