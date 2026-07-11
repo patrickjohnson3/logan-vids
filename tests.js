@@ -71,6 +71,34 @@ test("normalizeState converts legacy setting strings to runtime types", () => {
   assert(normalized.settings.speechRate === 1.1, "speech rate should be numeric");
 });
 
+test("validateSettings accepts typed runtime settings", () => {
+  const error = validateSettings({
+    unlockCode: "2468",
+    audioFeedback: false,
+    youtubeControls: true,
+    speechRate: 1,
+    theme: "dark",
+    videoGridOrder: "manual"
+  });
+  assert(error === "", `typed settings should be valid: ${error}`);
+});
+
+test("parseRepeatToml returns typed runtime settings", () => {
+  const result = parseRepeatToml([
+    "[settings]",
+    'unlockCode = "2468"',
+    'audioFeedback = "false"',
+    'youtubeControls = "true"',
+    'speechRate = "1.1"',
+    'theme = "light"',
+    'videoGridOrder = "alpha"'
+  ].join("\n"));
+  assert(result.ok, result.message);
+  assert(result.state.settings.audioFeedback === false, "audio feedback should import as boolean");
+  assert(result.state.settings.youtubeControls === true, "YouTube controls should import as boolean");
+  assert(result.state.settings.speechRate === 1.1, "speech rate should import as number");
+});
+
 test("normalizeState migrates unversioned saved state", () => {
   const normalized = normalizeState({
     settings: {},
