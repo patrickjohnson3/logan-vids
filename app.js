@@ -239,7 +239,7 @@ function addVideoFromForm(event) {
     return;
   }
 
-  addStoredVideo({
+  const persisted = addStoredVideo({
     id: result.id,
     title,
     tags,
@@ -248,7 +248,7 @@ function addVideoFromForm(event) {
   });
 
   els.addVideoForm.reset();
-  setMessage(els.addVideoMessage, MESSAGES.videoAdded);
+  setMessage(els.addVideoMessage, persisted ? MESSAGES.videoAdded : MESSAGES.storageUnavailable);
 }
 
 function moveVideo(index, direction) {
@@ -263,8 +263,8 @@ function deleteVideo(id) {
     return;
   }
   if (editingVideoId === id) editingVideoId = null;
-  removeStoredVideo(id);
-  setMessage(els.savedVideosMessage, MESSAGES.videoDeleted);
+  const persisted = removeStoredVideo(id);
+  setMessage(els.savedVideosMessage, persisted ? MESSAGES.videoDeleted : MESSAGES.storageUnavailable);
 }
 
 function clearAllVideos() {
@@ -273,8 +273,8 @@ function clearAllVideos() {
     return;
   }
   editingVideoId = null;
-  clearStoredVideos();
-  setMessage(els.savedVideosMessage, MESSAGES.allVideosCleared);
+  const persisted = clearStoredVideos();
+  setMessage(els.savedVideosMessage, persisted ? MESSAGES.allVideosCleared : MESSAGES.storageUnavailable);
 }
 
 function startEditingVideo(id) {
