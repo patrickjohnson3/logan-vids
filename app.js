@@ -188,9 +188,9 @@ function applyTheme() {
 function saveSettingsFromForm() {
   const nextSettings = {
     unlockCode: els.settingCode.value.trim(),
-    audioFeedback: String(els.settingAudioFeedback.checked),
-    youtubeControls: String(els.settingYouTubeControls.checked),
-    speechRate: els.settingSpeechRate.value,
+    audioFeedback: els.settingAudioFeedback.checked,
+    youtubeControls: els.settingYouTubeControls.checked,
+    speechRate: Number(els.settingSpeechRate.value),
     theme: els.settingTheme.value,
     videoGridOrder: els.settingVideoGridOrder.value
   };
@@ -201,7 +201,7 @@ function saveSettingsFromForm() {
   }
 
   const persisted = updateState((draft) => {
-    draft.settings = nextSettings;
+    draft.settings = normalizeSettings(nextSettings);
   });
   setMessage(els.settingsMessage, persisted ? "Settings saved." : MESSAGES.storageUnavailable);
 }

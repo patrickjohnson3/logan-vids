@@ -32,7 +32,7 @@ function startCurrentPlayer(autoplay) {
   iframe.src = buildEmbedUrl(
     video.id,
     autoplay,
-    state.settings.youtubeControls === "true"
+    state.settings.youtubeControls
   );
   els.playerFrameWrap.append(iframe);
 }

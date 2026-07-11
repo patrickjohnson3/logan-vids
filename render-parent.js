@@ -9,8 +9,8 @@ function renderParent() {
 
 function renderParentSettings() {
   els.settingCode.value = state.settings.unlockCode;
-  els.settingAudioFeedback.checked = state.settings.audioFeedback === "true";
-  els.settingYouTubeControls.checked = state.settings.youtubeControls === "true";
+  els.settingAudioFeedback.checked = state.settings.audioFeedback;
+  els.settingYouTubeControls.checked = state.settings.youtubeControls;
   els.settingSpeechRate.value = state.settings.speechRate;
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;

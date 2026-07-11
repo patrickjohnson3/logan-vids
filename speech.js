@@ -11,7 +11,7 @@ function estimateSpeechTimeout(text) {
 
 function speak(text, onComplete) {
   const finish = once(onComplete);
-  if (state.settings.audioFeedback !== "true") {
+  if (!state.settings.audioFeedback) {
     finish();
     return;
   }
@@ -22,7 +22,7 @@ function speak(text, onComplete) {
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = Number(state.settings.speechRate) || 0.9;
+  utterance.rate = state.settings.speechRate || 0.9;
   utterance.addEventListener("end", finish);
   utterance.addEventListener("error", finish);
   window.speechSynthesis.speak(utterance);

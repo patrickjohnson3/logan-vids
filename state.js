@@ -33,9 +33,9 @@ let storageWarning = "";
 const DEFAULT_STATE = {
   settings: {
     unlockCode: "2468",
-    audioFeedback: "true",
-    youtubeControls: "false",
-    speechRate: "0.9",
+    audioFeedback: true,
+    youtubeControls: false,
+    speechRate: 0.9,
     theme: "dark",
     videoGridOrder: "manual"
   },
@@ -171,7 +171,7 @@ function normalizeState(raw) {
   const normalized = cloneDefaultState();
   if (raw && raw.settings) {
     Object.keys(normalized.settings).forEach((key) => {
-      if (typeof raw.settings[key] === "string") normalized.settings[key] = raw.settings[key];
+      if (raw.settings[key] !== undefined) normalized.settings[key] = raw.settings[key];
     });
   }
   normalized.settings = normalizeSettings(normalized.settings);
@@ -251,11 +251,11 @@ function validateSettings(settings) {
     return "Settings: unlockCode must contain 4 to 12 digits.";
   }
 
-  if (!isAllowedValue(settings.audioFeedback, BOOLEAN_VALUES)) {
+  if (!isBooleanSetting(settings.audioFeedback)) {
     return "Settings: audioFeedback must be \"true\" or \"false\".";
   }
 
-  if (!isAllowedValue(settings.youtubeControls, BOOLEAN_VALUES)) {
+  if (!isBooleanSetting(settings.youtubeControls)) {
     return "Settings: youtubeControls must be \"true\" or \"false\".";
   }
 
@@ -279,26 +279,38 @@ function isAllowedValue(value, allowedValues) {
   return allowedValues.includes(value);
 }
 
+function isBooleanSetting(value) {
+  return typeof value === "boolean" || isAllowedValue(value, BOOLEAN_VALUES);
+}
+
+function normalizeBooleanSetting(value, fallback) {
+  if (typeof value === "boolean") return value;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+}
+
+function normalizeSpeechRate(value, fallback) {
+  const speechRate = Number(value);
+  if (!Number.isFinite(speechRate) || speechRate < 0.6 || speechRate > 1.2) {
+    return fallback;
+  }
+  return speechRate;
+}
+
 function normalizeSettings(settings) {
   const normalized = cloneDefaultState().settings;
   Object.keys(normalized).forEach((key) => {
-    if (typeof settings[key] === "string") normalized[key] = settings[key];
+    if (settings[key] !== undefined) normalized[key] = settings[key];
   });
 
   const defaults = cloneDefaultState().settings;
   if (!/^\d{4,12}$/.test(normalized.unlockCode)) {
     normalized.unlockCode = defaults.unlockCode;
   }
-  if (!isAllowedValue(normalized.audioFeedback, BOOLEAN_VALUES)) {
-    normalized.audioFeedback = defaults.audioFeedback;
-  }
-  if (!isAllowedValue(normalized.youtubeControls, BOOLEAN_VALUES)) {
-    normalized.youtubeControls = defaults.youtubeControls;
-  }
-  const speechRate = Number(normalized.speechRate);
-  if (!Number.isFinite(speechRate) || speechRate < 0.6 || speechRate > 1.2) {
-    normalized.speechRate = defaults.speechRate;
-  }
+  normalized.audioFeedback = normalizeBooleanSetting(normalized.audioFeedback, defaults.audioFeedback);
+  normalized.youtubeControls = normalizeBooleanSetting(normalized.youtubeControls, defaults.youtubeControls);
+  normalized.speechRate = normalizeSpeechRate(normalized.speechRate, defaults.speechRate);
   if (!isAllowedValue(normalized.theme, THEME_VALUES)) {
     normalized.theme = defaults.theme;
   }
