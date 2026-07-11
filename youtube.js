@@ -59,6 +59,10 @@ function buildCanonicalWatchUrl(id) {
   return `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
 }
 
+function buildThumbnailUrl(id) {
+  return `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
+}
+
 function normalizeStoredYouTubeUrl(video) {
   const parsedUrl = parseYouTubeUrl(video.youtubeUrl || "");
   if (parsedUrl.ok && parsedUrl.id === video.id) return parsedUrl.canonicalUrl;

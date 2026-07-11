@@ -45,7 +45,7 @@ function makeVideoTile(video) {
 
   const thumbnail = document.createElement("img");
   thumbnail.className = "video-thumbnail";
-  thumbnail.src = `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`;
+  thumbnail.src = buildThumbnailUrl(video.id);
   thumbnail.alt = "";
   thumbnail.referrerPolicy = "no-referrer";
   thumbnail.addEventListener("error", () => thumbnail.classList.add("unavailable"));
