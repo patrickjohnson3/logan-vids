@@ -1,6 +1,8 @@
 "use strict";
 
 // TOML import, export, parsing, and writing.
+const MAX_TOML_FILE_BYTES = 256 * 1024;
+const TOML_VIDEO_KEYS = ["title", "url", "icon", "favorite", "tags"];
 
 async function importTomlFromFile(event) {
   const [file] = event.target.files;

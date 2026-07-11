@@ -3,11 +3,9 @@
 const STORAGE_KEY = "repeat.runtimeState.v1";
 const MAX_TITLE_LENGTH = 48;
 const MAX_TAGS_LENGTH = 120;
-const MAX_TOML_FILE_BYTES = 256 * 1024;
 const BOOLEAN_VALUES = ["true", "false"];
 const THEME_VALUES = ["dark", "light"];
 const VIDEO_GRID_ORDER_VALUES = ["manual", "alpha"];
-const TOML_VIDEO_KEYS = ["title", "url", "icon", "favorite", "tags"];
 const SCREEN = {
   home: "home",
   unlock: "unlock",
