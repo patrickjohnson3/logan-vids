@@ -103,6 +103,8 @@ function startPlayerAfterSpeech(text, videoId) {
 }
 
 function leavePlayer() {
+  speechPlaybackToken += 1;
+  stopSpeech();
   els.playerFrameWrap.innerHTML = "";
   currentVideoId = null;
   showScreen(SCREEN.kid);

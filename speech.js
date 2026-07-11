@@ -28,6 +28,12 @@ function speak(text, onComplete) {
   window.speechSynthesis.speak(utterance);
 }
 
+function stopSpeech() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
 function once(callback) {
   let called = false;
   return () => {
