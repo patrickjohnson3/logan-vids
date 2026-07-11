@@ -25,7 +25,8 @@ const MESSAGES = {
   fileTooLarge: "Choose a TOML file smaller than 256 KB.",
   tomlDownloaded: "TOML downloaded.",
   clearAllPrompt: "Type CLEAR to delete all saved videos, favorites, and tags.",
-  clearAllCancelled: "Clear all cancelled."
+  clearAllCancelled: "Clear all cancelled.",
+  deleteVideoCancelled: "Delete cancelled."
 };
 const IS_TEST_MODE = typeof window !== "undefined" && window.REPEAT_TEST_MODE === true;
 let storageWarning = "";
@@ -525,10 +526,17 @@ function moveVideo(index, direction) {
 }
 
 function deleteVideo(id) {
+  const video = findVideo(id);
+  if (!video) return;
+  if (!confirm(`Delete "${video.title}"?`)) {
+    setMessage(els.addVideoMessage, MESSAGES.deleteVideoCancelled);
+    return;
+  }
   if (editingVideoId === id) editingVideoId = null;
   updateState((draft) => {
     draft.videos = draft.videos.filter((video) => video.id !== id);
   });
+  setMessage(els.addVideoMessage, "Video deleted.");
 }
 
 function clearAllVideos() {
