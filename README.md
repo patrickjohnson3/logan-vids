@@ -100,6 +100,10 @@ Malformed TOML, unsupported keys, overlong tags, duplicate YouTube videos, and u
 - `player.js`: player lifecycle and player controls
 - `tests.html` and `tests.js`: no-framework browser helper tests
 
+## Script conventions
+
+Repeat uses classic `<script>` files instead of ES modules so it can run directly from `file://` as well as from a static server. Because classic scripts share one page scope, new helpers must use file-specific names or live inside an existing file boundary. Do not add duplicate top-level function or constant names across scripts.
+
 ## Quick checks
 
 No dependencies are needed. To check JavaScript syntax:
