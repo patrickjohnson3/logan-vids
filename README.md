@@ -104,6 +104,19 @@ Malformed TOML, unsupported keys, overlong tags, duplicate YouTube videos, and u
 
 Repeat uses classic `<script>` files instead of ES modules so it can run directly from `file://` as well as from a static server. Because classic scripts share one page scope, new helpers must use file-specific names or live inside an existing file boundary. Do not add duplicate top-level function or constant names across scripts.
 
+## Formatting and linting
+
+This project intentionally has no npm dependency, formatter, linter, or build step. Follow the existing style when editing:
+
+- 2-space indentation
+- semicolons
+- double quotes in JavaScript
+- readable plain functions
+- no framework-style architecture
+- ASCII text unless the UI intentionally needs a symbol or emoji
+
+Prettier is reasonable as an editor-only tool if it is not added as a project dependency and does not create broad formatting-only churn. ESLint is not recommended yet because it would introduce npm configuration and maintenance overhead into a dependency-free app. Reconsider ESLint only if the project accepts dev dependencies or starts accumulating enough JavaScript risk to justify a local lint command.
+
 ## Quick checks
 
 No dependencies are needed. To check JavaScript syntax:
