@@ -90,7 +90,15 @@ Malformed TOML, unsupported keys, overlong tags, duplicate YouTube videos, and u
 
 - `index.html`: semantic app screens and controls
 - `style.css`: mobile-first visual design and responsive layout
-- `app.js`: screen behavior, local storage, TOML parsing/writing, speech feedback, URL validation, and player setup
+- `app.js`: startup, DOM lookup, screen changes, and parent actions
+- `state.js`: localStorage persistence, runtime state normalization, settings validation, tags, favorites, and video lookup helpers
+- `toml.js`: TOML upload/download, parsing, and writing
+- `youtube.js`: YouTube URL validation, canonical watch URLs, thumbnails, and embed URLs
+- `speech.js`: speech synthesis and speech cancellation helpers
+- `render-parent.js`: Parent Mode rendering
+- `render-kid.js`: Kid Mode rendering
+- `player.js`: player lifecycle and player controls
+- `tests.html` and `tests.js`: no-framework browser helper tests
 
 ## Quick checks
 
@@ -98,6 +106,14 @@ No dependencies are needed. To check JavaScript syntax:
 
 ```bash
 node --check app.js
+node --check state.js
+node --check toml.js
+node --check youtube.js
+node --check speech.js
+node --check render-parent.js
+node --check render-kid.js
+node --check player.js
+node --check tests.js
 ```
 
 To run the no-framework browser helper tests, open `tests.html` directly in a browser or from the local static server. A passing run shows a green page with only `PASS` lines.
