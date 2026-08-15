@@ -24,7 +24,7 @@ async function importTomlFromFile(event) {
   }
 }
 
-function importToml(text) {
+function importToml(text, storage) {
   const result = parseRepeatToml(text);
   if (!result.ok) {
     setMessage(els.tomlMessage, result.message);
@@ -36,7 +36,7 @@ function importToml(text) {
     return;
   }
 
-  const persisted = replaceState(result.state);
+  const persisted = replaceState(result.state, storage);
   renderCurrentScreen();
   setMessage(
     els.tomlMessage,
@@ -197,7 +197,7 @@ function normalizeTomlVideos(videos) {
     });
   }
 
-  return { ok: true, videos: normalizedVideos.map(normalizeVideo) };
+  return { ok: true, videos: normalizedVideos };
 }
 
 function failToml(lineNumber, message) {

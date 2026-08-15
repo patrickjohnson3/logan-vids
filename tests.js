@@ -314,6 +314,243 @@ test("cancelled TOML import preserves current state", () => {
   }
 });
 
+test("complete compatible TOML import replaces and persists runtime state", () => {
+  withControlledPersistence(() => {
+    const previousConfirm = window.confirm;
+    const storage = makeTestStorage(JSON.stringify(normalizeState({
+      settings: {},
+      videos: [{ id: "CbCdEfGhI_j", title: "Replace me" }]
+    })));
+    try {
+      state = loadState(storage);
+      window.confirm = () => true;
+
+      importToml([
+        "[settings]",
+        'unlockCode = "987654"',
+        'audioFeedback = "false"',
+        'youtubeControls = "true"',
+        'speechRate = "1.1"',
+        'theme = "light"',
+        'videoGridOrder = "alpha"',
+        "",
+        "[[videos]]",
+        'title = "Trains"',
+        'tags = "trains, calm"',
+        'url = "https://youtu.be/AbCdEfGhI_j?si=tracking"',
+        'favorite = "true"',
+        "",
+        "[[videos]]",
+        'title = "Music"',
+        'tags = "music"',
+        'url = "https://www.youtube.com/watch?v=BbCdEfGhI_j&list=ignored"',
+        'favorite = "false"'
+      ].join("\n"), storage);
+
+      const storedState = JSON.parse(storage.getStoredValue());
+      assert(state.settings.unlockCode === "987654", "import should replace the unlock code");
+      assert(state.settings.audioFeedback === false, "import should type audio feedback");
+      assert(state.settings.youtubeControls === true, "import should type YouTube controls");
+      assert(state.settings.speechRate === 1.1, "import should type speech rate");
+      assert(state.settings.theme === "light", "import should replace the theme");
+      assert(state.settings.videoGridOrder === "alpha", "import should replace grid order");
+      assert(state.videos.length === 2, "import should replace the video library");
+      assert(state.videos[0].id === "AbCdEfGhI_j", "import should parse the first video ID");
+      assert(state.videos[0].youtubeUrl === "https://www.youtube.com/watch?v=AbCdEfGhI_j", "import should store canonical URLs");
+      assert(tagsToString(state.videos[0].tags) === "trains, calm", "import should normalize tags");
+      assert(state.videos[0].favorite === "true", "import should preserve favorites");
+      assert(JSON.stringify(storedState) === JSON.stringify(state), "import should persist the runtime replacement");
+      assert(els.tomlMessage.textContent === MESSAGES.tomlImported, "successful import should be reported");
+    } finally {
+      window.confirm = previousConfirm;
+      els.tomlMessage.textContent = "";
+    }
+  });
+});
+
+test("TOML import reports a session-only replacement when persistence fails", () => {
+  withControlledPersistence(() => {
+    const previousConfirm = window.confirm;
+    const savedPayload = JSON.stringify(normalizeState({
+      settings: {},
+      videos: [{ id: "AbCdEfGhI_j", title: "Stored" }]
+    }));
+    const storage = makeTestStorage(savedPayload, { write: true });
+    try {
+      state = loadState(storage);
+      window.confirm = () => true;
+
+      importToml([
+        "[[videos]]",
+        'title = "Session only"',
+        'url = "https://youtu.be/BbCdEfGhI_j"'
+      ].join("\n"), storage);
+
+      assert(state.videos[0].id === "BbCdEfGhI_j", "failed persistence should retain imported session state");
+      assert(storage.getStoredValue() === savedPayload, "failed persistence should preserve stored data");
+      assert(storageWarning === MESSAGES.storageUnavailable, "failed persistence should expose its warning");
+      assert(els.tomlMessage.textContent === MESSAGES.importSessionOnly, "failed persistence should report session-only import");
+    } finally {
+      window.confirm = previousConfirm;
+      els.tomlMessage.textContent = "";
+    }
+  });
+});
+
+test("TOML import applies defaults for omitted optional values", () => {
+  const result = parseRepeatToml([
+    "[settings]",
+    'unlockCode = "9876"',
+    "",
+    "[[videos]]",
+    'title = "Trains"',
+    'url = "https://youtu.be/AbCdEfGhI_j"'
+  ].join("\n"));
+
+  assert(result.ok, result.message);
+  assert(result.state.settings.audioFeedback === DEFAULT_STATE.settings.audioFeedback, "audio feedback should use its default");
+  assert(result.state.settings.youtubeControls === DEFAULT_STATE.settings.youtubeControls, "YouTube controls should use their default");
+  assert(result.state.settings.speechRate === DEFAULT_STATE.settings.speechRate, "speech rate should use its default");
+  assert(result.state.settings.theme === DEFAULT_STATE.settings.theme, "theme should use its default");
+  assert(result.state.settings.videoGridOrder === DEFAULT_STATE.settings.videoGridOrder, "grid order should use its default");
+  assert(result.state.videos[0].favorite === "false", "favorite should default to false");
+  assert(result.state.videos[0].tags.length === 0, "tags should default to empty");
+});
+
+test("parseRepeatToml rejects duplicate keys and duplicate video IDs", () => {
+  const duplicateSetting = parseRepeatToml([
+    "[settings]",
+    'theme = "dark"',
+    'theme = "light"'
+  ].join("\n"));
+  const duplicateVideoValue = parseRepeatToml([
+    "[[videos]]",
+    'title = "Trains"',
+    'title = "More trains"',
+    'url = "https://youtu.be/AbCdEfGhI_j"'
+  ].join("\n"));
+  const duplicateVideoId = parseRepeatToml([
+    "[[videos]]",
+    'title = "Trains"',
+    'url = "https://youtu.be/AbCdEfGhI_j"',
+    "",
+    "[[videos]]",
+    'title = "The same trains"',
+    'url = "https://www.youtube.com/watch?v=AbCdEfGhI_j"'
+  ].join("\n"));
+
+  assert(!duplicateSetting.ok && duplicateSetting.message.includes("Duplicate setting"), "duplicate settings should fail");
+  assert(!duplicateVideoValue.ok && duplicateVideoValue.message.includes("Duplicate video value"), "duplicate video keys should fail");
+  assert(!duplicateVideoId.ok && duplicateVideoId.message.includes("duplicate"), "duplicate video IDs should fail");
+});
+
+test("parseRepeatToml rejects malformed and unsupported YouTube URLs", () => {
+  const urls = [
+    "not a URL",
+    "https://www.youtube.com/shorts/AbCdEfGhI_j"
+  ];
+
+  urls.forEach((url) => {
+    const result = parseRepeatToml([
+      "[[videos]]",
+      'title = "Bad URL"',
+      `url = "${url}"`
+    ].join("\n"));
+    assert(!result.ok, `${url} should fail TOML validation`);
+  });
+});
+
+test("parseRepeatToml rejects invalid setting values and non-string assignments", () => {
+  const invalidValue = parseRepeatToml([
+    "[settings]",
+    'audioFeedback = "sometimes"'
+  ].join("\n"));
+  const invalidType = parseRepeatToml([
+    "[settings]",
+    "audioFeedback = true"
+  ].join("\n"));
+
+  assert(!invalidValue.ok && invalidValue.message.includes("audioFeedback"), "invalid setting values should fail");
+  assert(!invalidType.ok && invalidType.message.includes("quoted string"), "non-string setting assignments should fail");
+});
+
+test("parseRepeatToml rejects overlong titles and tags", () => {
+  const overlongTitle = parseRepeatToml([
+    "[[videos]]",
+    `title = "${"T".repeat(MAX_TITLE_LENGTH + 1)}"`,
+    'url = "https://youtu.be/AbCdEfGhI_j"'
+  ].join("\n"));
+  const overlongTags = parseRepeatToml([
+    "[[videos]]",
+    'title = "Trains"',
+    `tags = "${"t".repeat(MAX_TAGS_LENGTH + 1)}"`,
+    'url = "https://youtu.be/AbCdEfGhI_j"'
+  ].join("\n"));
+
+  assert(!overlongTitle.ok && overlongTitle.message.includes("title longer"), "overlong titles should fail");
+  assert(!overlongTags.ok && overlongTags.message.includes("characters or fewer"), "overlong tags should fail");
+});
+
+test("parseRepeatToml rejects malformed video records", () => {
+  const missingTitle = parseRepeatToml([
+    "[[videos]]",
+    'url = "https://youtu.be/AbCdEfGhI_j"'
+  ].join("\n"));
+  const missingUrl = parseRepeatToml([
+    "[[videos]]",
+    'title = "Trains"'
+  ].join("\n"));
+  const unknownValue = parseRepeatToml([
+    "[[videos]]",
+    'title = "Trains"',
+    'url = "https://youtu.be/AbCdEfGhI_j"',
+    'channel = "Not supported"'
+  ].join("\n"));
+
+  assert(!missingTitle.ok && missingTitle.message.includes("needs title and url"), "missing titles should fail");
+  assert(!missingUrl.ok && missingUrl.message.includes("needs title and url"), "missing URLs should fail");
+  assert(!unknownValue.ok && unknownValue.message.includes("Unknown video value"), "unknown video values should fail");
+});
+
+test("parseRepeatToml retains supported legacy-key compatibility", () => {
+  const result = parseRepeatToml([
+    "[settings]",
+    'continuousLoop = "true"',
+    "",
+    "[[videos]]",
+    'title = "Trains"',
+    'url = "https://youtu.be/AbCdEfGhI_j"',
+    'icon = "train"'
+  ].join("\n"));
+
+  assert(result.ok, result.message);
+  assert(result.state.videos.length === 1, "legacy values should not remove the video");
+  assert(!Object.prototype.hasOwnProperty.call(result.state.settings, "continuousLoop"), "legacy loop should be ignored");
+  assert(!Object.prototype.hasOwnProperty.call(result.state.videos[0], "icon"), "legacy icons should be ignored");
+});
+
+test("invalid TOML import reports the error and preserves current state", () => {
+  const previousState = state;
+  try {
+    state = normalizeState({
+      settings: {},
+      videos: [{ id: "AbCdEfGhI_j", title: "Keep me" }]
+    });
+    const beforeImport = JSON.stringify(state);
+
+    importToml([
+      "[[videos]]",
+      'title = "Missing URL"'
+    ].join("\n"));
+
+    assert(JSON.stringify(state) === beforeImport, "invalid import should not replace state");
+    assert(els.tomlMessage.textContent.includes("needs title and url"), "invalid import should report its error");
+  } finally {
+    state = previousState;
+    els.tomlMessage.textContent = "";
+  }
+});
+
 test("normalizeState drops malformed stored video IDs", () => {
   const normalized = normalizeState({
     settings: {},
