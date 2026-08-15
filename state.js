@@ -17,6 +17,7 @@ const SCREEN = {
 const MESSAGES = {
   storageUnavailable: "Storage is unavailable. Changes will be lost when this page closes.",
   storageUnreadable: "Saved data could not be read. Repeat started with an empty library.",
+  storageNewer: "Saved data was created by a newer version of Repeat. It is available for this session but will not be overwritten. Import a compatible TOML file to replace it.",
   importConfirmation: "Importing TOML replaces all saved videos, favorites, and settings. Continue?",
   importCancelled: "Import cancelled.",
   tomlImported: "TOML imported.",
@@ -38,6 +39,7 @@ const MESSAGES = {
 };
 const IS_TEST_MODE = typeof window !== "undefined" && window.REPEAT_TEST_MODE === true;
 let storageWarning = "";
+let storageWriteBlocked = false;
 const DEFAULT_STATE = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
   settings: {
@@ -68,6 +70,10 @@ function loadState() {
 
   try {
     const parsed = JSON.parse(saved);
+    if (hasFutureSchemaVersion(parsed)) {
+      storageWriteBlocked = true;
+      storageWarning = MESSAGES.storageNewer;
+    }
     return normalizeState(parsed);
   } catch {
     storageWarning = MESSAGES.storageUnreadable;
@@ -76,6 +82,10 @@ function loadState() {
 }
 
 function persistState() {
+  if (storageWriteBlocked) {
+    storageWarning = MESSAGES.storageNewer;
+    return false;
+  }
   if (IS_TEST_MODE) return true;
 
   let persisted = true;
@@ -96,6 +106,7 @@ function updateState(mutator) {
 
 function replaceState(nextState) {
   state = nextState;
+  storageWriteBlocked = false;
   return persistState();
 }
 
@@ -184,9 +195,14 @@ function normalizeState(raw) {
   normalized.settings = normalizeSettings(normalized.settings);
 
   if (Array.isArray(raw && raw.videos)) {
-    normalized.videos = raw.videos
-      .map(normalizeVideo)
-      .filter(Boolean);
+    const seenIds = new Set();
+    normalized.videos = [];
+    raw.videos.forEach((video) => {
+      const normalizedVideo = normalizeVideo(video);
+      if (!normalizedVideo || seenIds.has(normalizedVideo.id)) return;
+      seenIds.add(normalizedVideo.id);
+      normalized.videos.push(normalizedVideo);
+    });
   }
 
   return normalized;
@@ -203,6 +219,12 @@ function migrateState(raw) {
   }
 
   return migrated;
+}
+
+function hasFutureSchemaVersion(raw) {
+  if (!raw || typeof raw !== "object") return false;
+  const version = Number(raw.schemaVersion);
+  return Number.isFinite(version) && version > CURRENT_SCHEMA_VERSION;
 }
 
 

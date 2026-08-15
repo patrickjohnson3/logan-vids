@@ -58,6 +58,8 @@ The player iframe is sandboxed and has no fullscreen, sharing, clipboard, Pictur
 
 Runtime state is stored only in browser `localStorage` under `repeat.runtimeState.v1`. TOML is the portable format for parent-managed backup and transfer.
 
+If saved browser data comes from a newer schema version, Repeat keeps the original `localStorage` entry unchanged and shows a Parent Mode warning. Importing a compatible TOML file explicitly replaces that state.
+
 In Parent Mode, use the TOML area to upload a TOML file or download `safe-loop-config.toml`. The parser deliberately supports only:
 
 - `[settings]`

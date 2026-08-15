@@ -71,6 +71,20 @@ test("normalizeState drops malformed stored video IDs", () => {
   assert(normalized.videos.length === 1, "only valid video should remain");
 });
 
+test("normalizeState removes duplicate stored video IDs", () => {
+  const normalized = normalizeState({
+    settings: {},
+    videos: [
+      { id: "AbCdEfGhI_j", title: "First" },
+      { id: "AbCdEfGhI_j", title: "Duplicate" },
+      { id: "BbCdEfGhI_j", title: "Second" }
+    ]
+  });
+  assert(normalized.videos.length === 2, "duplicate IDs should be removed");
+  assert(normalized.videos[0].title === "First", "the first saved video should be preserved");
+  assert(normalized.videos[1].title === "Second", "saved order should be preserved");
+});
+
 test("normalizeState converts legacy setting strings to runtime types", () => {
   const normalized = normalizeState({
     settings: {
@@ -119,6 +133,23 @@ test("normalizeState migrates unversioned saved state", () => {
     videos: []
   });
   assert(normalized.schemaVersion === CURRENT_SCHEMA_VERSION, "schema version should be current");
+});
+
+test("newer stored schemas block persistence", () => {
+  const previousStorageWriteBlocked = storageWriteBlocked;
+  const previousStorageWarning = storageWarning;
+  try {
+    storageWriteBlocked = hasFutureSchemaVersion({
+      schemaVersion: CURRENT_SCHEMA_VERSION + 1
+    });
+    storageWarning = "";
+
+    assert(!persistState(), "newer saved state should not be overwritten");
+    assert(storageWarning === MESSAGES.storageNewer, "a recovery warning should be available");
+  } finally {
+    storageWriteBlocked = previousStorageWriteBlocked;
+    storageWarning = previousStorageWarning;
+  }
 });
 
 test("video actions preserve unsaved Parent settings", () => {
