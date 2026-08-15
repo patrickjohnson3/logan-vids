@@ -132,6 +132,29 @@ test("video actions preserve unsaved Parent settings", () => {
   }
 });
 
+test("Again stops the current player before speech", () => {
+  const previousCurrentVideoId = currentVideoId;
+  const previousStartPlayerAfterSpeech = startPlayerAfterSpeech;
+  let observedEmptyPlayer = false;
+  try {
+    currentVideoId = "AbCdEfGhI_j";
+    els.playerFrameWrap.append(document.createElement("iframe"));
+    startPlayerAfterSpeech = (text, videoId) => {
+      observedEmptyPlayer = els.playerFrameWrap.children.length === 0;
+      assert(text === "again", "Again should speak its label");
+      assert(videoId === currentVideoId, "Again should restart the current video");
+    };
+
+    playCurrentAgain();
+
+    assert(observedEmptyPlayer, "Again should stop video audio before speech");
+  } finally {
+    startPlayerAfterSpeech = previousStartPlayerAfterSpeech;
+    currentVideoId = previousCurrentVideoId;
+    els.playerFrameWrap.innerHTML = "";
+  }
+});
+
 test("findSimilarVideo picks next shared-tag video", () => {
   const previousState = state;
   try {

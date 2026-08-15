@@ -79,6 +79,7 @@ function playSimilarVideo() {
 }
 
 function playCurrentAgain() {
+  els.playerFrameWrap.innerHTML = "";
   startPlayerAfterSpeech("again", currentVideoId);
 }
 
