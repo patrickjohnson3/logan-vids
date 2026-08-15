@@ -201,6 +201,8 @@ function saveSettingsFromForm() {
   const persisted = updateState((draft) => {
     draft.settings = normalizeSettings(nextSettings);
   });
+  applyTheme();
+  renderParentSettings();
   setMessage(els.settingsMessage, persisted ? MESSAGES.settingsSaved : MESSAGES.storageUnavailable);
 }
 
@@ -246,11 +248,15 @@ function addVideoFromForm(event) {
   });
 
   els.addVideoForm.reset();
+  renderParentVideoList();
+  renderParentStorageWarning();
   setMessage(els.addVideoMessage, persisted ? MESSAGES.videoAdded : MESSAGES.storageUnavailable);
 }
 
 function moveVideo(index, direction) {
   moveStoredVideo(index, direction);
+  renderParentVideoList();
+  renderParentStorageWarning();
 }
 
 function deleteVideo(id) {
@@ -262,6 +268,8 @@ function deleteVideo(id) {
   }
   if (editingVideoId === id) editingVideoId = null;
   const persisted = removeStoredVideo(id);
+  renderParentVideoList();
+  renderParentStorageWarning();
   setMessage(els.savedVideosMessage, persisted ? MESSAGES.videoDeleted : MESSAGES.storageUnavailable);
 }
 
@@ -272,12 +280,14 @@ function clearAllVideos() {
   }
   editingVideoId = null;
   const persisted = clearStoredVideos();
+  renderParentVideoList();
+  renderParentStorageWarning();
   setMessage(els.savedVideosMessage, persisted ? MESSAGES.allVideosCleared : MESSAGES.storageUnavailable);
 }
 
 function startEditingVideo(id) {
   editingVideoId = id;
-  renderParent();
+  renderParentVideoList();
   els.parentVideoList.querySelector("input")?.focus();
 }
 
@@ -308,6 +318,8 @@ function saveVideoMetadata(id, titleInput, tagsInput) {
     title,
     tags
   });
+  renderParentVideoList();
+  renderParentStorageWarning();
 }
 
 // Small DOM helpers.

@@ -15,6 +15,10 @@ function renderParentSettings() {
   els.speechRateOutput.value = state.settings.speechRate;
   els.settingTheme.value = state.settings.theme;
   els.settingVideoGridOrder.value = state.settings.videoGridOrder;
+  renderParentStorageWarning();
+}
+
+function renderParentStorageWarning() {
   els.storageMessage.textContent = storageWarning;
 }
 
@@ -90,7 +94,7 @@ function makeVideoMetadataEditor(video) {
     saveButton,
     makeSmallButton("Cancel", () => {
       editingVideoId = null;
-      renderParent();
+      renderParentVideoList();
     })
   );
 

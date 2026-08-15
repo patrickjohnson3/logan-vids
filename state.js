@@ -76,10 +76,7 @@ function loadState() {
 }
 
 function persistState() {
-  if (IS_TEST_MODE) {
-    renderCurrentScreen();
-    return true;
-  }
+  if (IS_TEST_MODE) return true;
 
   let persisted = true;
   try {
@@ -89,7 +86,6 @@ function persistState() {
     persisted = false;
     storageWarning = MESSAGES.storageUnavailable;
   }
-  renderCurrentScreen();
   return persisted;
 }
 

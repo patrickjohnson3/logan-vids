@@ -107,6 +107,31 @@ test("normalizeState migrates unversioned saved state", () => {
   assert(normalized.schemaVersion === CURRENT_SCHEMA_VERSION, "schema version should be current");
 });
 
+test("video actions preserve unsaved Parent settings", () => {
+  const previousState = state;
+  const previousEditingVideoId = editingVideoId;
+  try {
+    state = normalizeState({
+      settings: {},
+      videos: [
+        { id: "AbCdEfGhI_j", title: "One" },
+        { id: "BbCdEfGhI_j", title: "Two" }
+      ]
+    });
+    editingVideoId = null;
+    renderParent();
+    els.settingCode.value = "9876";
+
+    moveVideo(0, 1);
+
+    assert(els.settingCode.value === "9876", "video actions should not reset unsaved settings");
+  } finally {
+    state = previousState;
+    editingVideoId = previousEditingVideoId;
+    renderParent();
+  }
+});
+
 test("findSimilarVideo picks next shared-tag video", () => {
   const previousState = state;
   try {
