@@ -31,6 +31,20 @@ test("parseRepeatToml rejects invalid favorite values", () => {
   assert(!result.ok, "invalid favorite should fail");
 });
 
+test("parseRepeatToml rejects files without a supported section", () => {
+  const result = parseRepeatToml("# No configuration here\n\n");
+  assert(!result.ok, "comment-only TOML should fail");
+});
+
+test("parseRepeatToml rejects whitespace-only video titles", () => {
+  const result = parseRepeatToml([
+    "[[videos]]",
+    'title = "   "',
+    'url = "https://www.youtube.com/watch?v=AbCdEfGhI_j"'
+  ].join("\n"));
+  assert(!result.ok, "whitespace-only titles should fail");
+});
+
 test("writeRepeatToml round trips tags", () => {
   const text = writeRepeatToml(normalizeState({
     settings: {},

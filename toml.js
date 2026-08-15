@@ -123,6 +123,10 @@ function parseRepeatToml(text) {
     }
   }
 
+  if (!hasSettingsSection && nextState.videos.length === 0) {
+    return { ok: false, message: "Add a [settings] or [[videos]] section." };
+  }
+
   const settingsError = validateSettings(nextState.settings);
   if (settingsError) {
     return { ok: false, message: settingsError };
@@ -155,11 +159,12 @@ function normalizeTomlVideos(videos) {
 
   for (let index = 0; index < videos.length; index += 1) {
     const video = videos[index];
-    if (!video.title || !video.url) {
+    const title = String(video.title || "").trim();
+    if (!title || !video.url) {
       return { ok: false, message: `Video ${index + 1} needs title and url values.` };
     }
 
-    if (video.title.length > MAX_TITLE_LENGTH) {
+    if (title.length > MAX_TITLE_LENGTH) {
       return { ok: false, message: `Video ${index + 1} has a title longer than ${MAX_TITLE_LENGTH} characters.` };
     }
 
@@ -185,7 +190,7 @@ function normalizeTomlVideos(videos) {
 
     normalizedVideos.push({
       id: parsedUrl.id,
-      title: video.title,
+      title,
       tags,
       youtubeUrl: parsedUrl.canonicalUrl,
       favorite: video.favorite === "true" ? "true" : "false"
