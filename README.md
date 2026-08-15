@@ -41,6 +41,7 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - **Similar** selects the next saved video with at least one matching parent tag, then speaks its title before playback.
 - Favorites remain at the top of Kid Mode in their saved order and do not repeat in the video grid.
 - Every approved video is configured to loop, avoiding YouTube end-screen recommendations.
+- If the browser reports no connection, the player keeps the selected thumbnail and leaves **Home** and **Again** available without opening YouTube.
 
 ## YouTube URLs
 

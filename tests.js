@@ -20,6 +20,7 @@ function withControlledPlayerPlayback(run) {
   const previousStartCurrentPlayer = startCurrentPlayer;
   const previousSpeak = speak;
   const previousStopSpeech = stopSpeech;
+  const previousBrowserIsOnline = browserIsOnline;
   const previousSetTimeout = window.setTimeout;
   const previousClearTimeout = window.clearTimeout;
   const previousScreen = getActiveScreenName();
@@ -28,6 +29,7 @@ function withControlledPlayerPlayback(run) {
   let activeSpeech = null;
   let nextTimerId = 1;
   let playerStartCount = 0;
+  let browserOnline = true;
 
   state = normalizeState({
     settings: { audioFeedback: true },
@@ -77,9 +79,11 @@ function withControlledPlayerPlayback(run) {
     if (cancelledSpeech) cancelledSpeech.complete();
   };
 
+  browserIsOnline = () => browserOnline;
+
   startCurrentPlayer = (autoplay) => {
-    playerStartCount += 1;
     previousStartCurrentPlayer(autoplay);
+    if (els.playerFrameWrap.querySelector("iframe")) playerStartCount += 1;
   };
 
   const controls = {
@@ -99,6 +103,9 @@ function withControlledPlayerPlayback(run) {
     },
     getPlayerStartCount() {
       return playerStartCount;
+    },
+    setBrowserOnline(value) {
+      browserOnline = value;
     }
   };
 
@@ -111,6 +118,7 @@ function withControlledPlayerPlayback(run) {
     startCurrentPlayer = previousStartCurrentPlayer;
     speak = previousSpeak;
     stopSpeech = previousStopSpeech;
+    browserIsOnline = previousBrowserIsOnline;
     window.setTimeout = previousSetTimeout;
     window.clearTimeout = previousClearTimeout;
     state = previousState;
@@ -120,6 +128,7 @@ function withControlledPlayerPlayback(run) {
     playerPreparationPending = previousPreparationPending;
     els.playerFrameWrap.innerHTML = "";
     els.playerFrameWrap.setAttribute("aria-busy", "false");
+    els.playerFrameWrap.removeAttribute("aria-describedby");
     els.playerTitle.textContent = "Player";
     showScreen(previousScreen);
   }
@@ -439,6 +448,88 @@ test("Favorite feedback supersedes pending title speech", () => {
 
     assert(controls.getPlayerStartCount() === 1, "playback should wait for the latest feedback");
     assert(els.playerFrameWrap.querySelectorAll("iframe").length === 1, "latest feedback should create one iframe");
+  });
+});
+
+test("offline startup shows an app-owned state without an iframe", () => {
+  withControlledPlayerPlayback((controls) => {
+    controls.setBrowserOnline(false);
+    openPlayer("AbCdEfGhI_j");
+
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "true", "startup should begin in Preparing");
+    controls.completeSpeech(0);
+
+    const offlineMessage = els.playerFrameWrap.querySelector(".player-offline-message");
+    const thumbnail = els.playerFrameWrap.querySelector(".player-offline-thumbnail");
+    assert(controls.getPlayerStartCount() === 0, "offline startup should not create a player");
+    assert(!els.playerFrameWrap.querySelector("iframe"), "offline startup should not create an iframe");
+    assert(offlineMessage && offlineMessage.textContent.includes("No connection"), "offline state should explain the problem");
+    assert(offlineMessage.getAttribute("role") === "status", "offline state should be announced as status");
+    assert(thumbnail && thumbnail.src.includes("AbCdEfGhI_j"), "offline state should retain the selected thumbnail");
+    assert(els.playerTitle.textContent === "Trains", "offline state should retain the video title");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "offline state should not remain busy");
+    assert(els.playerFrameWrap.getAttribute("aria-describedby") === "playerOfflineMessage", "offline message should describe the player");
+    assert(els.favoriteButton.disabled, "Favorites should be unavailable offline");
+    assert(els.similarButton.disabled, "Similar should be unavailable offline");
+    assert(!els.againButton.disabled, "Again should remain available offline");
+  });
+});
+
+test("Again while offline keeps the existing calm offline state", () => {
+  withControlledPlayerPlayback((controls) => {
+    controls.setBrowserOnline(false);
+    openPlayer("AbCdEfGhI_j");
+    controls.completeSpeech(0);
+    const offlineMessage = els.playerFrameWrap.querySelector(".player-offline-message");
+
+    playCurrentAgain();
+
+    assert(controls.speechRequests.length === 1, "offline retry should not add repeated speech");
+    assert(els.playerFrameWrap.querySelector(".player-offline-message") === offlineMessage, "offline retry should preserve the announced state");
+    assert(!els.playerFrameWrap.querySelector("iframe"), "offline retry should not create an iframe");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "offline retry should remain settled");
+  });
+});
+
+test("Again retries normal preparation after connectivity returns", () => {
+  withControlledPlayerPlayback((controls) => {
+    controls.setBrowserOnline(false);
+    openPlayer("AbCdEfGhI_j");
+    controls.completeSpeech(0);
+
+    controls.setBrowserOnline(true);
+    playCurrentAgain();
+
+    assert(controls.speechRequests[1].text === "again", "online retry should use normal Again speech");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "true", "online retry should return to Preparing");
+    assert(els.playerFrameWrap.querySelector(".player-preparing-status"), "online retry should show Preparing");
+    assert(!els.playerFrameWrap.querySelector(".player-offline-message"), "online retry should leave the offline state");
+    assert(!els.playerFrameWrap.hasAttribute("aria-describedby"), "online retry should remove offline semantics");
+    assert(!els.favoriteButton.disabled, "Favorites should return during an online retry");
+    assert(!els.similarButton.disabled, "Similar should return during an online retry");
+
+    controls.completeSpeech(1);
+
+    assert(controls.getPlayerStartCount() === 1, "online retry should create one player");
+    assert(els.playerFrameWrap.querySelectorAll("iframe").length === 1, "online retry should create one iframe");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "playback should finish preparation");
+  });
+});
+
+test("Home leaves the offline player cleanly", () => {
+  withControlledPlayerPlayback((controls) => {
+    controls.setBrowserOnline(false);
+    openPlayer("AbCdEfGhI_j");
+    controls.completeSpeech(0);
+
+    returnToKidMode();
+    controls.fireAllTimers();
+
+    assert(screens[SCREEN.kid].classList.contains("active"), "Home should return to Kid Mode");
+    assert(currentVideoId === null, "Home should clear the offline video");
+    assert(els.playerFrameWrap.children.length === 0, "Home should remove the offline state and any iframe");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "Home should leave the player settled");
+    assert(!els.playerFrameWrap.hasAttribute("aria-describedby"), "Home should remove offline semantics");
   });
 });
 

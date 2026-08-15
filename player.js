@@ -26,8 +26,14 @@ function startCurrentPlayer(autoplay) {
     return;
   }
 
+  if (!browserIsOnline()) {
+    renderPlayerOffline(video);
+    return;
+  }
+
   els.playerFrameWrap.innerHTML = "";
   els.playerFrameWrap.setAttribute("aria-busy", "false");
+  els.playerFrameWrap.removeAttribute("aria-describedby");
   els.playerTitle.textContent = video.title;
   renderPlayerControls(video);
   const iframe = document.createElement("iframe");
@@ -68,6 +74,7 @@ function renderPlayerControls(video) {
   const isFavorite = isFavoriteVideo(video);
   const label = isFavorite ? "Remove" : "Favorites";
   const similarVideo = video ? findSimilarVideo(video.id) : null;
+  els.favoriteButton.disabled = !video;
   els.favoriteButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";
   els.favoriteButton.querySelector(".player-button-label").textContent = label;
   els.favoriteButton.setAttribute("aria-pressed", String(isFavorite));
@@ -95,6 +102,15 @@ function playSimilarVideo() {
 function playCurrentAgain() {
   const video = findVideo(currentVideoId);
   if (!video) return;
+
+  if (!browserIsOnline()) {
+    invalidatePendingPlayerStart();
+    stopSpeech();
+    renderPlayerOffline(video);
+    return;
+  }
+
+  renderPlayerControls(video);
   renderPlayerPreparing(video);
   startPlayerAfterSpeech("again", currentVideoId);
 }
@@ -130,9 +146,10 @@ function renderPlayerPreparing(video) {
   els.playerTitle.textContent = video.title;
   els.playerFrameWrap.innerHTML = "";
   els.playerFrameWrap.setAttribute("aria-busy", "true");
+  els.playerFrameWrap.removeAttribute("aria-describedby");
 
   const thumbnail = document.createElement("img");
-  thumbnail.className = "player-preparing-thumbnail";
+  thumbnail.className = "player-state-thumbnail player-preparing-thumbnail";
   thumbnail.src = buildThumbnailUrl(video.id);
   thumbnail.alt = "";
   thumbnail.referrerPolicy = "no-referrer";
@@ -143,6 +160,38 @@ function renderPlayerPreparing(video) {
   status.textContent = "Preparing";
 
   els.playerFrameWrap.append(thumbnail, status);
+}
+
+function renderPlayerOffline(video) {
+  playerPreparationPending = false;
+  els.playerTitle.textContent = video.title;
+  els.playerFrameWrap.setAttribute("aria-busy", "false");
+  els.playerFrameWrap.setAttribute("aria-describedby", "playerOfflineMessage");
+  els.favoriteButton.disabled = true;
+  els.similarButton.disabled = true;
+  els.againButton.disabled = false;
+
+  // Keep the existing state in place so repeated offline retries are not re-announced.
+  if (els.playerFrameWrap.querySelector(".player-offline-message")) return;
+
+  els.playerFrameWrap.innerHTML = "";
+  const thumbnail = document.createElement("img");
+  thumbnail.className = "player-state-thumbnail player-offline-thumbnail";
+  thumbnail.src = buildThumbnailUrl(video.id);
+  thumbnail.alt = "";
+  thumbnail.referrerPolicy = "no-referrer";
+
+  const message = document.createElement("p");
+  message.id = "playerOfflineMessage";
+  message.className = "player-offline-message";
+  message.setAttribute("role", "status");
+  message.textContent = "No connection. This video cannot play right now.";
+
+  els.playerFrameWrap.append(thumbnail, message);
+}
+
+function browserIsOnline() {
+  return navigator.onLine !== false;
 }
 
 function invalidatePendingPlayerStart() {
@@ -159,6 +208,7 @@ function leavePlayer() {
   stopSpeech();
   els.playerFrameWrap.innerHTML = "";
   els.playerFrameWrap.setAttribute("aria-busy", "false");
+  els.playerFrameWrap.removeAttribute("aria-describedby");
   els.playerTitle.textContent = "Player";
   currentVideoId = null;
   showScreen(SCREEN.kid);

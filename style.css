@@ -500,14 +500,15 @@ textarea {
   background: #000;
 }
 
-.player-preparing-thumbnail {
+.player-state-thumbnail {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.player-preparing-status {
+.player-preparing-status,
+.player-offline-message {
   position: absolute;
   right: 0;
   bottom: 0;
