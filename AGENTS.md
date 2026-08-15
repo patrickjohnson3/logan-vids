@@ -15,9 +15,14 @@ loads the same source files as the application, so no nested `AGENTS.md` is need
   must not query a remote recommendation service and must continue to skip favorites.
 - Keep the app usable as static files with no framework, npm dependency, build step,
   backend, account, cloud sync, or analytics service. Do not add a CDN dependency.
+- The shared classic-script globals are a deliberate constraint, not a standing
+  refactor target. Do not introduce modules, dependency injection, a build system, or
+  new architectural layers solely to make the dependency graph look cleaner.
 - Kid Mode behavior is the highest-risk product surface. Avoid hidden gestures,
   surprise navigation, flashing, autoplay chains, dynamic tile reordering, and
   controls that expose normal YouTube browsing.
+- Prioritize validation on Logan's actual Android device over internal cleanup when a
+  change touches autoplay, speech, fullscreen, orientation, storage, or the iframe.
 
 ## Repository Map and Ownership
 
@@ -42,6 +47,8 @@ loads the same source files as the application, so no nested `AGENTS.md` is need
 - `tests.html` is a DOM fixture and browser test runner; `tests.js` contains the
   no-framework helper/regression tests. `README.md` is the authoritative user and
   operator documentation.
+- `TODO.md` tracks concrete cleanup and target-device verification. Keep it scoped;
+  architecture modernization is not an implicit TODO.
 
 All scripts are classic scripts so the app works from `file://`. They share one
 global scope and depend on the order in `index.html` and `tests.html`. Use unique,
@@ -81,8 +88,9 @@ and the README example as applicable.
 ## Media and Security Boundaries
 
 - Accept only individual `youtube.com/watch?v=...` and `youtu.be/...` URLs. Continue
-  rejecting channels, playlist-only URLs, Shorts, and livestream URLs; strip tracking
-  and appended playlist parameters by storing the canonical watch URL.
+  rejecting channels, playlist-only URLs, Shorts, and recognized livestream URL
+  forms; strip tracking and appended playlist parameters by storing the canonical
+  watch URL. Without remote metadata, a normal watch URL cannot be classified as live.
 - Remote media is limited to thumbnails from `https://i.ytimg.com` and sandboxed
   players from `https://www.youtube-nocookie.com`. Keep the CSP aligned with those
   minimum origins and do not weaken `connect-src`, `object-src`, `base-uri`, or
@@ -162,6 +170,11 @@ In particular:
 - test persistence/TOML changes with success, cancellation, malformed input, and
   unavailable-storage paths; and
 - test any CSP, iframe, or URL change with a real approved video and thumbnail.
+
+The automated browser tests do not establish autoplay permission, audible speech,
+YouTube overlay/end-screen behavior, fullscreen reliability, or Android layout.
+Treat the matching checks in `TODO.md` as evidence that must come from the target
+device, not as facts implied by passing tests.
 
 If a required browser/device check cannot be run, report that gap instead of treating
 syntax checks as full validation.

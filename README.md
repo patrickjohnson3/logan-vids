@@ -49,7 +49,7 @@ Only individual videos are accepted:
 - `https://www.youtube.com/watch?v=VIDEO_ID`
 - `https://youtu.be/VIDEO_ID`
 
-The app rejects channels, playlist-only URLs, Shorts, and livestream URLs. It converts accepted URLs into `youtube-nocookie.com` embeds.
+The app rejects channels, playlist-only URLs, Shorts, and recognized livestream URL forms such as `/live/`. A livestream presented as a normal watch URL cannot be identified without querying remote metadata. Accepted videos are converted into `youtube-nocookie.com` embeds.
 Accepted video URLs are saved as clean watch URLs, so tracking parameters such as `si=...` and appended playlist parameters are stripped.
 
 The player iframe is sandboxed and has no fullscreen, sharing, clipboard, Picture-in-Picture, popup, or top-level-navigation permission. This reduces exposure to YouTube, but it cannot turn a remote YouTube embed into a complete kiosk. Use Android app pinning or kiosk controls when stricter device-level containment is required.
@@ -86,7 +86,9 @@ url = "https://www.youtube.com/watch?v=AbCdEfGhI_j"
 favorite = "false"
 ```
 
-For backward compatibility, a legacy `continuousLoop` setting and legacy video `icon` values are accepted but ignored. Malformed TOML, other unsupported keys, overlong tags, duplicate YouTube videos, and unsupported YouTube URLs are rejected with a parent-facing message. Exported TOML always reflects the currently saved local state.
+For backward compatibility, a legacy `continuousLoop` setting and legacy video `icon` values are accepted but ignored. Malformed TOML, other unsupported keys, overlong tags, duplicate YouTube videos, and unsupported YouTube URLs are rejected with a parent-facing message.
+
+Downloaded TOML reflects the current in-memory state. During normal operation this matches `localStorage`; when storage is unavailable or writes are blocked for a newer schema, the download can include session changes that have not replaced the saved browser data.
 
 ## Project structure
 
@@ -101,6 +103,7 @@ For backward compatibility, a legacy `continuousLoop` setting and legacy video `
 - `render-kid.js`: Kid Mode rendering
 - `player.js`: player lifecycle and player controls
 - `tests.html` and `tests.js`: no-framework browser helper tests
+- `TODO.md`: focused cleanup and target-device verification backlog
 
 ## Script conventions
 
@@ -139,7 +142,7 @@ To run the no-framework browser helper tests, open `tests.html` directly in a br
 
 ## Manual browser checks
 
-Before sharing a build, verify these flows in Android Chrome:
+Automated browser tests do not prove audible autoplay, speech completion, YouTube iframe behavior, fullscreen, or responsive layout. Before sharing a build, verify these flows in Android Chrome on the target device and record significant device-specific results in `TODO.md`:
 
 1. Open `tests.html` and confirm all helper tests pass.
 2. Enter Kid Mode and confirm fullscreen starts; open Parent Mode and confirm fullscreen exits.
