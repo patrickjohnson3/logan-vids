@@ -45,13 +45,13 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 
 ## YouTube URLs
 
-Only individual videos are accepted:
+Input URLs must use HTTP or HTTPS. Only individual videos are accepted:
 
 - `https://www.youtube.com/watch?v=VIDEO_ID`
 - `https://youtu.be/VIDEO_ID`
 
-The app rejects channels, playlist-only URLs, Shorts, and recognized livestream URL forms such as `/live/`. A livestream presented as a normal watch URL cannot be identified without querying remote metadata. Accepted videos are converted into `youtube-nocookie.com` embeds.
-Accepted video URLs are saved as clean watch URLs, so tracking parameters such as `si=...` and appended playlist parameters are stripped.
+The app locally rejects channels, playlist-only URLs, Shorts, and recognized livestream URL forms such as `/live/` or `live=1`. It does not query remote metadata, so a livestream presented as a normal watch URL cannot be identified. Accepted videos are converted into `youtube-nocookie.com` embeds.
+Accepted HTTP and HTTPS input URLs are saved as clean canonical HTTPS watch URLs, so tracking parameters such as `si=...` and appended playlist parameters are stripped.
 
 The player iframe is sandboxed and has no fullscreen, sharing, clipboard, Picture-in-Picture, popup, or top-level-navigation permission. This reduces exposure to YouTube, but it cannot turn a remote YouTube embed into a complete kiosk. Use Android app pinning or kiosk controls when stricter device-level containment is required.
 

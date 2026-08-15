@@ -219,6 +219,34 @@ test("parseYouTubeUrl strips share and playlist params", () => {
   assert(result.canonicalUrl === "https://www.youtube.com/watch?v=AbCdEfGhI_j", "URL should be canonical");
 });
 
+test("parseYouTubeUrl accepts supported HTTP and HTTPS forms", () => {
+  const urls = [
+    "https://www.youtube.com/watch?v=AbCdEfGhI_j",
+    "https://youtu.be/AbCdEfGhI_j",
+    "http://www.youtube.com/watch?v=AbCdEfGhI_j",
+    "http://youtu.be/AbCdEfGhI_j"
+  ];
+
+  urls.forEach((url) => {
+    const result = parseYouTubeUrl(url);
+    assert(result.ok, `${url} should be accepted`);
+    assert(result.canonicalUrl === "https://www.youtube.com/watch?v=AbCdEfGhI_j", `${url} should canonicalize to HTTPS`);
+  });
+});
+
+test("parseYouTubeUrl rejects non-web protocols", () => {
+  const urls = [
+    "ftp://www.youtube.com/watch?v=AbCdEfGhI_j",
+    "file://www.youtube.com/watch?v=AbCdEfGhI_j"
+  ];
+
+  urls.forEach((url) => {
+    const result = parseYouTubeUrl(url);
+    assert(!result.ok, `${url} should be rejected`);
+    assert(result.message.includes("HTTP or HTTPS"), `${url} should report the accepted protocols`);
+  });
+});
+
 test("parseYouTubeUrl rejects unsupported YouTube surfaces", () => {
   const unsupportedUrls = [
     "https://www.youtube.com/shorts/AbCdEfGhI_j",
@@ -458,6 +486,17 @@ test("parseRepeatToml rejects malformed and unsupported YouTube URLs", () => {
     ].join("\n"));
     assert(!result.ok, `${url} should fail TOML validation`);
   });
+});
+
+test("parseRepeatToml rejects non-HTTP YouTube URLs", () => {
+  const result = parseRepeatToml([
+    "[[videos]]",
+    'title = "FTP video"',
+    'url = "ftp://www.youtube.com/watch?v=AbCdEfGhI_j"'
+  ].join("\n"));
+
+  assert(!result.ok, "TOML should reject non-HTTP YouTube URLs");
+  assert(result.message.includes("HTTP or HTTPS"), "TOML should reuse the YouTube protocol error");
 });
 
 test("parseRepeatToml rejects invalid setting values and non-string assignments", () => {

@@ -10,6 +10,10 @@ function parseYouTubeUrl(value) {
     return { ok: false, message: "Use a full YouTube watch or youtu.be video URL." };
   }
 
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return { ok: false, message: "Use an HTTP or HTTPS YouTube URL." };
+  }
+
   const host = url.hostname.replace(/^www\./, "").toLowerCase();
   const path = url.pathname;
 
