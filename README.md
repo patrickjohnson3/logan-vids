@@ -86,7 +86,7 @@ url = "https://www.youtube.com/watch?v=AbCdEfGhI_j"
 favorite = "false"
 ```
 
-Malformed TOML, unsupported keys, overlong tags, duplicate YouTube videos, and unsupported YouTube URLs are rejected with a parent-facing message. Exported TOML always reflects the currently saved local state.
+For backward compatibility, a legacy `continuousLoop` setting and legacy video `icon` values are accepted but ignored. Malformed TOML, other unsupported keys, overlong tags, duplicate YouTube videos, and unsupported YouTube URLs are rejected with a parent-facing message. Exported TOML always reflects the currently saved local state.
 
 ## Project structure
 
