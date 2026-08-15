@@ -29,6 +29,7 @@ function renderParentVideoList() {
   getVideos().forEach((video, index) => {
     const item = document.createElement("li");
     item.className = "parent-video-item";
+    item.dataset.videoId = video.id;
 
     const title = document.createElement("p");
     title.className = "parent-video-title";
@@ -49,10 +50,34 @@ function renderParentVideoList() {
     const actions = document.createElement("div");
     actions.className = "parent-video-actions";
     actions.append(
-      makeSmallButton("Edit", () => startEditingVideo(video.id)),
-      makeSmallButton("Up", () => moveVideo(index, -1), index === 0),
-      makeSmallButton("Down", () => moveVideo(index, 1), index === getVideoCount() - 1),
-      makeSmallButton("Delete", () => deleteVideo(video.id), false, "danger-action")
+      makeParentVideoAction(
+        "Edit",
+        `Edit ${video.title}`,
+        "edit",
+        () => startEditingVideo(video.id)
+      ),
+      makeParentVideoAction(
+        "Up",
+        `Move ${video.title} up`,
+        "up",
+        () => moveVideo(video.id, -1),
+        index === 0
+      ),
+      makeParentVideoAction(
+        "Down",
+        `Move ${video.title} down`,
+        "down",
+        () => moveVideo(video.id, 1),
+        index === getVideoCount() - 1
+      ),
+      makeParentVideoAction(
+        "Delete",
+        `Delete ${video.title}`,
+        "delete",
+        () => deleteVideo(video.id),
+        false,
+        "danger-action"
+      )
     );
 
     item.append(title, tags, url, actions);
@@ -90,13 +115,10 @@ function makeVideoMetadataEditor(video) {
   saveButton.type = "submit";
   saveButton.className = "primary-action";
   saveButton.textContent = "Save";
-  actions.append(
-    saveButton,
-    makeSmallButton("Cancel", () => {
-      editingVideoId = null;
-      renderParentVideoList();
-    })
-  );
+  saveButton.dataset.parentAction = "save";
+  const cancelButton = makeSmallButton("Cancel", () => cancelEditingVideo(video.id));
+  cancelButton.dataset.parentAction = "cancel";
+  actions.append(saveButton, cancelButton);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -104,4 +126,18 @@ function makeVideoMetadataEditor(video) {
   });
   form.append(titleLabel, tagsLabel, actions);
   return form;
+}
+
+function makeParentVideoAction(
+  label,
+  accessibleName,
+  action,
+  onClick,
+  disabled,
+  className
+) {
+  const button = makeSmallButton(label, onClick, disabled, className);
+  button.dataset.parentAction = action;
+  button.setAttribute("aria-label", accessibleName);
+  return button;
 }

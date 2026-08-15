@@ -45,6 +45,47 @@ function withControlledPersistence(run) {
   }
 }
 
+function withParentVideoState(videos, run) {
+  const previousState = state;
+  const previousEditingVideoId = editingVideoId;
+  const previousScreen = getActiveScreenName();
+  state = normalizeState({ settings: {}, videos });
+  editingVideoId = null;
+  setMessage(els.settingsMessage, "");
+  setMessage(els.addVideoMessage, "");
+  setMessage(els.savedVideosMessage, "");
+  showScreen(SCREEN.parent);
+
+  try {
+    run();
+  } finally {
+    [
+      els.settingCode,
+      els.settingAudioFeedback,
+      els.settingYouTubeControls,
+      els.settingSpeechRate,
+      els.settingTheme,
+      els.settingVideoGridOrder,
+      els.videoTitle,
+      els.videoTags,
+      els.videoUrl
+    ].forEach((field) => {
+      field.removeAttribute("aria-invalid");
+      field.removeAttribute("aria-describedby");
+    });
+    setMessage(els.settingsMessage, "");
+    setMessage(els.addVideoMessage, "");
+    setMessage(els.savedVideosMessage, "");
+    state = previousState;
+    editingVideoId = previousEditingVideoId;
+    showScreen(previousScreen);
+  }
+}
+
+function getParentActionForTest(id, action) {
+  return getParentVideoItem(id)?.querySelector(`[data-parent-action=${action}]`);
+}
+
 function withControlledPlayerPlayback(run) {
   const previousState = state;
   const previousCurrentVideoId = currentVideoId;
@@ -524,7 +565,7 @@ test("video actions preserve unsaved Parent settings", () => {
     renderParent();
     els.settingCode.value = "9876";
 
-    moveVideo(0, 1);
+    moveVideo("AbCdEfGhI_j", 1);
 
     assert(els.settingCode.value === "9876", "video actions should not reset unsaved settings");
   } finally {
@@ -532,6 +573,169 @@ test("video actions preserve unsaved Parent settings", () => {
     editingVideoId = previousEditingVideoId;
     renderParent();
   }
+});
+
+test("Parent video actions include the video title in accessible names", () => {
+  withParentVideoState([
+    { id: "AbCdEfGhI_j", title: "Trains" },
+    { id: "BbCdEfGhI_j", title: "Music" }
+  ], () => {
+    const edit = getParentActionForTest("AbCdEfGhI_j", "edit");
+    const up = getParentActionForTest("AbCdEfGhI_j", "up");
+    const down = getParentActionForTest("AbCdEfGhI_j", "down");
+    const deleteButton = getParentActionForTest("AbCdEfGhI_j", "delete");
+
+    assert(edit.textContent === "Edit", "Edit should keep its visible label");
+    assert(up.textContent === "Up", "Up should keep its visible label");
+    assert(down.textContent === "Down", "Down should keep its visible label");
+    assert(deleteButton.textContent === "Delete", "Delete should keep its visible label");
+    assert(edit.getAttribute("aria-label") === "Edit Trains", "Edit should name its video");
+    assert(up.getAttribute("aria-label") === "Move Trains up", "Up should name its video");
+    assert(down.getAttribute("aria-label") === "Move Trains down", "Down should name its video");
+    assert(deleteButton.getAttribute("aria-label") === "Delete Trains", "Delete should name its video");
+  });
+});
+
+test("Move actions restore focus and announce the result", () => {
+  withParentVideoState([
+    { id: "AbCdEfGhI_j", title: "One" },
+    { id: "BbCdEfGhI_j", title: "Two" },
+    { id: "CbCdEfGhI_j", title: "Three" },
+    { id: "DbCdEfGhI_j", title: "Four" }
+  ], () => {
+    getParentActionForTest("CbCdEfGhI_j", "up").click();
+
+    assert(document.activeElement === getParentActionForTest("CbCdEfGhI_j", "up"), "Move Up should regain focus");
+    assert(els.savedVideosMessage.textContent === "Moved Three up.", "Move Up should announce its result");
+
+    getParentActionForTest("CbCdEfGhI_j", "down").click();
+
+    assert(document.activeElement === getParentActionForTest("CbCdEfGhI_j", "down"), "Move Down should regain focus");
+    assert(els.savedVideosMessage.textContent === "Moved Three down.", "Move Down should announce its result");
+  });
+});
+
+test("Save and Cancel restore focus to Edit for the same video", () => {
+  withParentVideoState([
+    { id: "AbCdEfGhI_j", title: "Trains", tags: "calm" }
+  ], () => {
+    getParentActionForTest("AbCdEfGhI_j", "edit").click();
+    const editedItem = getParentVideoItem("AbCdEfGhI_j");
+    const titleInput = editedItem.querySelector("input");
+    titleInput.value = "Train rides";
+    getParentActionForTest("AbCdEfGhI_j", "save").click();
+
+    assert(findVideo("AbCdEfGhI_j").title === "Train rides", "Save should update the title");
+    assert(document.activeElement === getParentActionForTest("AbCdEfGhI_j", "edit"), "Save should focus Edit");
+
+    getParentActionForTest("AbCdEfGhI_j", "edit").click();
+    getParentActionForTest("AbCdEfGhI_j", "cancel").click();
+
+    assert(document.activeElement === getParentActionForTest("AbCdEfGhI_j", "edit"), "Cancel should focus Edit");
+  });
+});
+
+test("deleting a middle video focuses the next video's Edit control", () => {
+  const previousConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    withParentVideoState([
+      { id: "AbCdEfGhI_j", title: "One" },
+      { id: "BbCdEfGhI_j", title: "Two" },
+      { id: "CbCdEfGhI_j", title: "Three" }
+    ], () => {
+      getParentActionForTest("BbCdEfGhI_j", "delete").click();
+
+      assert(document.activeElement === getParentActionForTest("CbCdEfGhI_j", "edit"), "middle deletion should focus the next video");
+    });
+  } finally {
+    window.confirm = previousConfirm;
+  }
+});
+
+test("deleting the last video focuses the previous video's Edit control", () => {
+  const previousConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    withParentVideoState([
+      { id: "AbCdEfGhI_j", title: "One" },
+      { id: "BbCdEfGhI_j", title: "Two" }
+    ], () => {
+      getParentActionForTest("BbCdEfGhI_j", "delete").click();
+
+      assert(document.activeElement === getParentActionForTest("AbCdEfGhI_j", "edit"), "last deletion should focus the previous video");
+    });
+  } finally {
+    window.confirm = previousConfirm;
+  }
+});
+
+test("deleting the final video focuses the Saved videos heading", () => {
+  const previousConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    withParentVideoState([
+      { id: "AbCdEfGhI_j", title: "One" }
+    ], () => {
+      getParentActionForTest("AbCdEfGhI_j", "delete").click();
+
+      assert(document.activeElement === els.savedVideosTitle, "final deletion should focus the list heading");
+    });
+  } finally {
+    window.confirm = previousConfirm;
+  }
+});
+
+test("Add Video custom validation focuses and describes the invalid field", () => {
+  withParentVideoState([], () => {
+    els.videoTitle.value = "   ";
+    els.videoTags.value = "calm";
+    els.videoUrl.value = "https://youtu.be/AbCdEfGhI_j";
+
+    addVideoFromForm({ preventDefault() {} });
+
+    assert(document.activeElement === els.videoTitle, "invalid Add Video title should receive focus");
+    assert(els.videoTitle.getAttribute("aria-invalid") === "true", "invalid Add Video title should be marked");
+    assert(els.videoTitle.getAttribute("aria-describedby") === "addVideoMessage", "Add Video error should describe the title");
+    assert(els.addVideoMessage.textContent === MESSAGES.addTitle, "Add Video error should be visible");
+
+    els.videoTitle.value = "Trains";
+    els.videoTitle.dispatchEvent(new Event("input", { bubbles: true }));
+
+    assert(!els.videoTitle.hasAttribute("aria-invalid"), "editing should clear Add Video invalid state");
+    assert(!els.videoTitle.hasAttribute("aria-describedby"), "editing should clear the Add Video error association");
+    assert(els.addVideoMessage.textContent === "", "editing should clear the stale Add Video error");
+
+    addVideoFromForm({ preventDefault() {} });
+
+    assert(videoExists("AbCdEfGhI_j"), "corrected Add Video data should save");
+    assert(els.addVideoMessage.textContent === MESSAGES.videoAdded, "successful Add Video submission should report success");
+  });
+});
+
+test("Settings custom validation focuses and describes the invalid field", () => {
+  withParentVideoState([], () => {
+    els.settingCode.value = "12";
+
+    saveSettingsFromForm();
+
+    assert(document.activeElement === els.settingCode, "invalid unlock code should receive focus");
+    assert(els.settingCode.getAttribute("aria-invalid") === "true", "invalid unlock code should be marked");
+    assert(els.settingCode.getAttribute("aria-describedby") === "settingsMessage", "Settings error should describe the unlock code");
+    assert(els.settingsMessage.textContent.includes("4 to 12 digits"), "Settings error should be visible");
+
+    els.settingCode.value = "9876";
+    els.settingCode.dispatchEvent(new Event("input", { bubbles: true }));
+
+    assert(!els.settingCode.hasAttribute("aria-invalid"), "editing should clear Settings invalid state");
+    assert(!els.settingCode.hasAttribute("aria-describedby"), "editing should clear the Settings error association");
+    assert(els.settingsMessage.textContent === "", "editing should clear the stale Settings error");
+
+    saveSettingsFromForm();
+
+    assert(state.settings.unlockCode === "9876", "corrected Settings data should save");
+    assert(els.settingsMessage.textContent === MESSAGES.settingsSaved, "successful Settings submission should report success");
+  });
 });
 
 test("Home to Kid Mode focuses the Kid heading", () => {
@@ -883,4 +1087,5 @@ function runTests() {
   document.body.style.background = "#ecfff0";
 }
 
+bindParentValidationEvents();
 runTests();

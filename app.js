@@ -58,6 +58,7 @@ function getElements() {
     addVideoMessage: getRequiredElement("addVideoMessage"),
     parentVideoList: getRequiredElement("parentVideoList"),
     emptyParentMessage: getRequiredElement("emptyParentMessage"),
+    savedVideosTitle: getRequiredElement("savedVideosTitle"),
     savedVideosMessage: getRequiredElement("savedVideosMessage"),
     clearAllButton: getRequiredElement("clearAllButton"),
     uploadTomlButton: getRequiredElement("uploadTomlButton"),
@@ -97,6 +98,7 @@ function bindEvents() {
   });
 
   els.unlockForm.addEventListener("submit", handleParentUnlock);
+  bindParentValidationEvents();
 
   els.settingSpeechRate.addEventListener("input", () => {
     els.speechRateOutput.value = els.settingSpeechRate.value;
@@ -112,6 +114,22 @@ function bindEvents() {
   els.similarButton.addEventListener("click", playSimilarVideo);
   els.againButton.addEventListener("click", playCurrentAgain);
   els.playerHomeButton.addEventListener("click", returnToKidMode);
+}
+
+function bindParentValidationEvents() {
+  [
+    [els.settingCode, els.settingsMessage],
+    [els.settingAudioFeedback, els.settingsMessage],
+    [els.settingYouTubeControls, els.settingsMessage],
+    [els.settingSpeechRate, els.settingsMessage],
+    [els.settingTheme, els.settingsMessage],
+    [els.settingVideoGridOrder, els.settingsMessage],
+    [els.videoTitle, els.addVideoMessage],
+    [els.videoTags, els.addVideoMessage],
+    [els.videoUrl, els.addVideoMessage]
+  ].forEach(([field, message]) => {
+    field.addEventListener("input", () => clearFieldValidation(field, message));
+  });
 }
 
 function enterKidMode() {
@@ -201,9 +219,22 @@ function saveSettingsFromForm() {
   };
   const settingsError = validateSettings(nextSettings);
   if (settingsError) {
-    setMessage(els.settingsMessage, settingsError.replace("Settings: ", ""));
+    showFieldValidationError(
+      getSettingsErrorField(settingsError),
+      els.settingsMessage,
+      settingsError.replace("Settings: ", "")
+    );
     return;
   }
+
+  [
+    els.settingCode,
+    els.settingAudioFeedback,
+    els.settingYouTubeControls,
+    els.settingSpeechRate,
+    els.settingTheme,
+    els.settingVideoGridOrder
+  ].forEach((field) => clearFieldValidation(field, els.settingsMessage));
 
   const persisted = updateState((draft) => {
     draft.settings = normalizeSettings(nextSettings);
@@ -221,28 +252,28 @@ function addVideoFromForm(event) {
   const result = parseYouTubeUrl(url);
 
   if (!title) {
-    setMessage(els.addVideoMessage, MESSAGES.addTitle);
+    showFieldValidationError(els.videoTitle, els.addVideoMessage, MESSAGES.addTitle);
     return;
   }
 
   if (title.length > MAX_TITLE_LENGTH) {
-    setMessage(els.addVideoMessage, MESSAGES.titleTooLong);
+    showFieldValidationError(els.videoTitle, els.addVideoMessage, MESSAGES.titleTooLong);
     return;
   }
 
   const tagsError = validateTags(tags);
   if (tagsError) {
-    setMessage(els.addVideoMessage, tagsError);
+    showFieldValidationError(els.videoTags, els.addVideoMessage, tagsError);
     return;
   }
 
   if (!result.ok) {
-    setMessage(els.addVideoMessage, result.message);
+    showFieldValidationError(els.videoUrl, els.addVideoMessage, result.message);
     return;
   }
 
   if (videoExists(result.id)) {
-    setMessage(els.addVideoMessage, MESSAGES.duplicateVideo);
+    showFieldValidationError(els.videoUrl, els.addVideoMessage, MESSAGES.duplicateVideo);
     return;
   }
 
@@ -255,15 +286,26 @@ function addVideoFromForm(event) {
   });
 
   els.addVideoForm.reset();
+  [els.videoTitle, els.videoTags, els.videoUrl].forEach((field) => {
+    clearFieldValidation(field, els.addVideoMessage);
+  });
   renderParentVideoList();
   renderParentStorageWarning();
   setMessage(els.addVideoMessage, persisted ? MESSAGES.videoAdded : MESSAGES.storageUnavailable);
 }
 
-function moveVideo(index, direction) {
+function moveVideo(id, direction) {
+  const video = findVideo(id);
+  const index = getVideos().findIndex((item) => item.id === id);
+  const nextIndex = index + direction;
+  if (!video || index < 0 || nextIndex < 0 || nextIndex >= getVideoCount()) return;
+
   moveStoredVideo(index, direction);
   renderParentVideoList();
   renderParentStorageWarning();
+  const directionLabel = direction < 0 ? "up" : "down";
+  setMessage(els.savedVideosMessage, `Moved ${video.title} ${directionLabel}.`);
+  focusParentVideoAction(id, directionLabel);
 }
 
 function deleteVideo(id) {
@@ -273,11 +315,20 @@ function deleteVideo(id) {
     setMessage(els.savedVideosMessage, MESSAGES.deleteVideoCancelled);
     return;
   }
+  const videos = getVideos();
+  const deletedIndex = videos.findIndex((item) => item.id === id);
+  const returnFocusVideoId =
+    videos[deletedIndex + 1]?.id || videos[deletedIndex - 1]?.id || null;
   if (editingVideoId === id) editingVideoId = null;
   const persisted = removeStoredVideo(id);
   renderParentVideoList();
   renderParentStorageWarning();
   setMessage(els.savedVideosMessage, persisted ? MESSAGES.videoDeleted : MESSAGES.storageUnavailable);
+  if (returnFocusVideoId) {
+    focusParentVideoAction(returnFocusVideoId, "edit");
+  } else {
+    focusWithoutScrolling(els.savedVideosTitle);
+  }
 }
 
 function clearAllVideos() {
@@ -295,7 +346,8 @@ function clearAllVideos() {
 function startEditingVideo(id) {
   editingVideoId = id;
   renderParentVideoList();
-  els.parentVideoList.querySelector("input")?.focus();
+  const titleInput = getParentVideoItem(id)?.querySelector("input");
+  if (titleInput) focusWithoutScrolling(titleInput);
 }
 
 function saveVideoMetadata(id, titleInput, tagsInput) {
@@ -327,6 +379,59 @@ function saveVideoMetadata(id, titleInput, tagsInput) {
   });
   renderParentVideoList();
   renderParentStorageWarning();
+  focusParentVideoAction(id, "edit");
+}
+
+function cancelEditingVideo(id) {
+  editingVideoId = null;
+  renderParentVideoList();
+  focusParentVideoAction(id, "edit");
+}
+
+function getParentVideoItem(id) {
+  return Array.from(els.parentVideoList.children)
+    .find((item) => item.dataset.videoId === id);
+}
+
+function focusParentVideoAction(id, action) {
+  const item = getParentVideoItem(id);
+  if (!item) return;
+
+  let control = item.querySelector(`[data-parent-action=${action}]`);
+  if (control?.disabled && (action === "up" || action === "down")) {
+    const fallbackAction = action === "up" ? "down" : "up";
+    control = item.querySelector(`[data-parent-action=${fallbackAction}]`);
+  }
+  if (!control || control.disabled) {
+    control = item.querySelector("[data-parent-action=edit]");
+  }
+  if (control) focusWithoutScrolling(control);
+}
+
+function getSettingsErrorField(error) {
+  if (error.includes("unlockCode")) return els.settingCode;
+  if (error.includes("audioFeedback")) return els.settingAudioFeedback;
+  if (error.includes("youtubeControls")) return els.settingYouTubeControls;
+  if (error.includes("speechRate")) return els.settingSpeechRate;
+  if (error.includes("theme")) return els.settingTheme;
+  if (error.includes("videoGridOrder")) return els.settingVideoGridOrder;
+  return els.settingCode;
+}
+
+function showFieldValidationError(field, message, text) {
+  setMessage(message, text);
+  field.setAttribute("aria-invalid", "true");
+  field.setAttribute("aria-describedby", message.id);
+  focusWithoutScrolling(field);
+}
+
+function clearFieldValidation(field, message) {
+  const describedByError = field.getAttribute("aria-describedby") === message.id;
+  field.removeAttribute("aria-invalid");
+  if (describedByError) {
+    field.removeAttribute("aria-describedby");
+    setMessage(message, "");
+  }
 }
 
 // Small DOM helpers.
