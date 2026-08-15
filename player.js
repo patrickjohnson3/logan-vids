@@ -2,13 +2,18 @@
 
 // Player lifecycle.
 
+let playerStartToken = 0;
+let pendingPlayerStartTimeoutId = null;
+let playerPreparationPending = false;
+
 function openPlayer(id) {
   const video = findVideo(id);
   if (!video) return;
 
   currentVideoId = video.id;
-  showScreen(SCREEN.player);
   renderPlayerControls(video);
+  renderPlayerPreparing(video);
+  showScreen(SCREEN.player);
 
   // Wait for the tile label before starting the video, so the two audio cues do not compete.
   startPlayerAfterSpeech(video.title, video.id);
@@ -22,6 +27,8 @@ function startCurrentPlayer(autoplay) {
   }
 
   els.playerFrameWrap.innerHTML = "";
+  els.playerFrameWrap.setAttribute("aria-busy", "false");
+  els.playerTitle.textContent = video.title;
   renderPlayerControls(video);
   const iframe = document.createElement("iframe");
   iframe.title = video.title;
@@ -38,7 +45,9 @@ function startCurrentPlayer(autoplay) {
 }
 
 function renderPlayer() {
-  renderPlayerControls(findVideo(currentVideoId));
+  const video = findVideo(currentVideoId);
+  renderPlayerControls(video);
+  if (video) els.playerTitle.textContent = video.title;
 }
 
 function toggleCurrentFavorite() {
@@ -47,7 +56,12 @@ function toggleCurrentFavorite() {
   const isFavorite = isFavoriteVideo(video);
   setVideoFavorite(currentVideoId, !isFavorite);
   renderPlayerControls(findVideo(currentVideoId));
-  speak(isFavorite ? "remove" : "favorites");
+  const feedback = isFavorite ? "remove" : "favorites";
+  if (playerPreparationPending) {
+    startPlayerAfterSpeech(feedback, video.id);
+  } else {
+    speak(feedback);
+  }
 }
 
 function renderPlayerControls(video) {
@@ -73,40 +87,79 @@ function playSimilarVideo() {
   if (!nextVideo) return;
 
   currentVideoId = nextVideo.id;
-  els.playerFrameWrap.innerHTML = "";
   renderPlayerControls(nextVideo);
+  renderPlayerPreparing(nextVideo);
   startPlayerAfterSpeech(nextVideo.title, nextVideo.id);
 }
 
 function playCurrentAgain() {
-  els.playerFrameWrap.innerHTML = "";
+  const video = findVideo(currentVideoId);
+  if (!video) return;
+  renderPlayerPreparing(video);
   startPlayerAfterSpeech("again", currentVideoId);
 }
 
 function startPlayerAfterSpeech(text, videoId) {
-  const playbackToken = ++speechPlaybackToken;
+  invalidatePendingPlayerStart();
+  const playbackToken = playerStartToken;
+  playerPreparationPending = true;
+  els.playerFrameWrap.setAttribute("aria-busy", "true");
+
   const startPlayer = once(() => {
     if (
-      playbackToken === speechPlaybackToken &&
+      playbackToken === playerStartToken &&
       currentVideoId === videoId &&
       screens[SCREEN.player].classList.contains("active")
     ) {
+      playerPreparationPending = false;
+      pendingPlayerStartTimeoutId = null;
       startCurrentPlayer(true);
     }
   });
 
-  // Some mobile speech engines never emit end/error; do not strand the child on an empty player.
+  // Some mobile speech engines never emit end/error; do not strand the child in preparation.
   const timeoutId = window.setTimeout(startPlayer, estimateSpeechTimeout(text));
+  pendingPlayerStartTimeoutId = timeoutId;
   speak(text, () => {
     window.clearTimeout(timeoutId);
     startPlayer();
   });
 }
 
+function renderPlayerPreparing(video) {
+  els.playerTitle.textContent = video.title;
+  els.playerFrameWrap.innerHTML = "";
+  els.playerFrameWrap.setAttribute("aria-busy", "true");
+
+  const thumbnail = document.createElement("img");
+  thumbnail.className = "player-preparing-thumbnail";
+  thumbnail.src = buildThumbnailUrl(video.id);
+  thumbnail.alt = "";
+  thumbnail.referrerPolicy = "no-referrer";
+
+  const status = document.createElement("p");
+  status.className = "player-preparing-status";
+  status.setAttribute("role", "status");
+  status.textContent = "Preparing";
+
+  els.playerFrameWrap.append(thumbnail, status);
+}
+
+function invalidatePendingPlayerStart() {
+  playerStartToken += 1;
+  if (pendingPlayerStartTimeoutId !== null) {
+    window.clearTimeout(pendingPlayerStartTimeoutId);
+    pendingPlayerStartTimeoutId = null;
+  }
+  playerPreparationPending = false;
+}
+
 function leavePlayer() {
-  speechPlaybackToken += 1;
+  invalidatePendingPlayerStart();
   stopSpeech();
   els.playerFrameWrap.innerHTML = "";
+  els.playerFrameWrap.setAttribute("aria-busy", "false");
+  els.playerTitle.textContent = "Player";
   currentVideoId = null;
   showScreen(SCREEN.kid);
 }

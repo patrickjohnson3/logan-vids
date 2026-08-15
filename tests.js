@@ -11,6 +11,120 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function withControlledPlayerPlayback(run) {
+  const previousState = state;
+  const previousCurrentVideoId = currentVideoId;
+  const previousPlayerStartToken = playerStartToken;
+  const previousPendingTimeoutId = pendingPlayerStartTimeoutId;
+  const previousPreparationPending = playerPreparationPending;
+  const previousStartCurrentPlayer = startCurrentPlayer;
+  const previousSpeak = speak;
+  const previousStopSpeech = stopSpeech;
+  const previousSetTimeout = window.setTimeout;
+  const previousClearTimeout = window.clearTimeout;
+  const previousScreen = getActiveScreenName();
+  const speechRequests = [];
+  const timers = new Map();
+  let activeSpeech = null;
+  let nextTimerId = 1;
+  let playerStartCount = 0;
+
+  state = normalizeState({
+    settings: { audioFeedback: true },
+    videos: [
+      { id: "AbCdEfGhI_j", title: "Trains", tags: "trains" },
+      { id: "BbCdEfGhI_j", title: "More trains", tags: "trains" }
+    ]
+  });
+  currentVideoId = null;
+  playerStartToken = 0;
+  pendingPlayerStartTimeoutId = null;
+  playerPreparationPending = false;
+  els.playerFrameWrap.innerHTML = "";
+  els.playerFrameWrap.setAttribute("aria-busy", "false");
+  els.playerTitle.textContent = "Player";
+
+  window.setTimeout = (callback) => {
+    const timerId = nextTimerId;
+    nextTimerId += 1;
+    timers.set(timerId, callback);
+    return timerId;
+  };
+  window.clearTimeout = (timerId) => timers.delete(timerId);
+
+  speak = (text, onComplete) => {
+    const cancelledSpeech = activeSpeech;
+    activeSpeech = null;
+    if (cancelledSpeech) cancelledSpeech.complete();
+
+    let completed = false;
+    const request = {
+      text,
+      complete() {
+        if (completed) return;
+        completed = true;
+        if (activeSpeech === request) activeSpeech = null;
+        if (typeof onComplete === "function") onComplete();
+      }
+    };
+    activeSpeech = request;
+    speechRequests.push(request);
+  };
+
+  stopSpeech = () => {
+    const cancelledSpeech = activeSpeech;
+    activeSpeech = null;
+    if (cancelledSpeech) cancelledSpeech.complete();
+  };
+
+  startCurrentPlayer = (autoplay) => {
+    playerStartCount += 1;
+    previousStartCurrentPlayer(autoplay);
+  };
+
+  const controls = {
+    speechRequests,
+    completeSpeech(index) {
+      speechRequests[index].complete();
+    },
+    fireNextTimer() {
+      const nextTimer = timers.entries().next();
+      assert(!nextTimer.done, "a pending player timer should exist");
+      const [timerId, callback] = nextTimer.value;
+      timers.delete(timerId);
+      callback();
+    },
+    fireAllTimers() {
+      while (timers.size > 0) this.fireNextTimer();
+    },
+    getPlayerStartCount() {
+      return playerStartCount;
+    }
+  };
+
+  try {
+    run(controls);
+  } finally {
+    playerStartToken += 1;
+    timers.clear();
+    activeSpeech = null;
+    startCurrentPlayer = previousStartCurrentPlayer;
+    speak = previousSpeak;
+    stopSpeech = previousStopSpeech;
+    window.setTimeout = previousSetTimeout;
+    window.clearTimeout = previousClearTimeout;
+    state = previousState;
+    currentVideoId = previousCurrentVideoId;
+    playerStartToken = previousPlayerStartToken;
+    pendingPlayerStartTimeoutId = previousPendingTimeoutId;
+    playerPreparationPending = previousPreparationPending;
+    els.playerFrameWrap.innerHTML = "";
+    els.playerFrameWrap.setAttribute("aria-busy", "false");
+    els.playerTitle.textContent = "Player";
+    showScreen(previousScreen);
+  }
+}
+
 test("parseYouTubeUrl strips share and playlist params", () => {
   const result = parseYouTubeUrl("https://youtu.be/AbCdEfGhI_j?si=track&list=ignored");
   assert(result.ok, result.message);
@@ -230,27 +344,102 @@ test("video actions preserve unsaved Parent settings", () => {
   }
 });
 
-test("Again stops the current player before speech", () => {
-  const previousCurrentVideoId = currentVideoId;
-  const previousStartPlayerAfterSpeech = startPlayerAfterSpeech;
-  let observedEmptyPlayer = false;
-  try {
-    currentVideoId = "AbCdEfGhI_j";
-    els.playerFrameWrap.append(document.createElement("iframe"));
-    startPlayerAfterSpeech = (text, videoId) => {
-      observedEmptyPlayer = els.playerFrameWrap.children.length === 0;
-      assert(text === "again", "Again should speak its label");
-      assert(videoId === currentVideoId, "Again should restart the current video");
-    };
+test("player waits for startup speech and replaces Preparing with one iframe", () => {
+  withControlledPlayerPlayback((controls) => {
+    openPlayer("AbCdEfGhI_j");
 
+    const thumbnail = els.playerFrameWrap.querySelector(".player-preparing-thumbnail");
+    assert(controls.getPlayerStartCount() === 0, "playback should wait for title speech");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "true", "player should be busy while preparing");
+    assert(els.playerTitle.textContent === "Trains", "the current video title should label the player");
+    assert(thumbnail && thumbnail.src.includes("AbCdEfGhI_j"), "the selected thumbnail should remain visible");
+    assert(els.playerFrameWrap.textContent === "Preparing", "Preparing should be visible");
+    assert(!els.playerFrameWrap.querySelector("iframe"), "no iframe should exist before speech completes");
+
+    controls.completeSpeech(0);
+    controls.fireAllTimers();
+    controls.completeSpeech(0);
+
+    assert(controls.getPlayerStartCount() === 1, "playback should start exactly once");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "player should stop being busy when playback starts");
+    assert(!els.playerFrameWrap.querySelector(".player-preparing-thumbnail"), "the thumbnail should leave when playback starts");
+    assert(!els.playerFrameWrap.querySelector(".player-preparing-status"), "Preparing should leave when playback starts");
+    assert(els.playerFrameWrap.querySelectorAll("iframe").length === 1, "one player iframe should be present");
+  });
+});
+
+test("player timeout fallback starts playback exactly once", () => {
+  withControlledPlayerPlayback((controls) => {
+    openPlayer("AbCdEfGhI_j");
+
+    controls.fireNextTimer();
+    controls.completeSpeech(0);
+
+    assert(controls.getPlayerStartCount() === 1, "timeout and late speech completion should start once");
+    assert(els.playerFrameWrap.querySelectorAll("iframe").length === 1, "timeout should create one iframe");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "timeout should finish preparation");
+  });
+});
+
+test("Home invalidates pending playback and removes the player", () => {
+  withControlledPlayerPlayback((controls) => {
+    openPlayer("AbCdEfGhI_j");
+
+    returnToKidMode();
+    controls.fireAllTimers();
+    controls.completeSpeech(0);
+
+    assert(controls.getPlayerStartCount() === 0, "Home should prevent delayed playback");
+    assert(screens[SCREEN.kid].classList.contains("active"), "Home should return to Kid Mode");
+    assert(currentVideoId === null, "Home should clear the current video");
+    assert(els.playerFrameWrap.children.length === 0, "Home should leave no iframe or preparation UI");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "Home should clear the busy state");
+  });
+});
+
+test("rapid Again and Similar actions start only the newest video", () => {
+  withControlledPlayerPlayback((controls) => {
+    openPlayer("AbCdEfGhI_j");
     playCurrentAgain();
+    playSimilarVideo();
 
-    assert(observedEmptyPlayer, "Again should stop video audio before speech");
-  } finally {
-    startPlayerAfterSpeech = previousStartPlayerAfterSpeech;
-    currentVideoId = previousCurrentVideoId;
-    els.playerFrameWrap.innerHTML = "";
-  }
+    assert(controls.getPlayerStartCount() === 0, "superseded speech should not start playback");
+    assert(currentVideoId === "BbCdEfGhI_j", "Similar should select the newest video");
+    assert(els.playerTitle.textContent === "More trains", "the newest title should label the player");
+    assert(els.playerFrameWrap.querySelector(".player-preparing-thumbnail").src.includes("BbCdEfGhI_j"), "the newest thumbnail should be visible");
+
+    controls.completeSpeech(0);
+    controls.completeSpeech(1);
+    controls.completeSpeech(2);
+    controls.fireAllTimers();
+
+    const iframe = els.playerFrameWrap.querySelector("iframe");
+    assert(controls.getPlayerStartCount() === 1, "only the newest request should start playback");
+    assert(iframe && iframe.title === "More trains", "the newest video should own the iframe");
+    assert(iframe.src.includes("BbCdEfGhI_j"), "the iframe should load the newest video");
+  });
+});
+
+test("Favorite feedback supersedes pending title speech", () => {
+  withControlledPlayerPlayback((controls) => {
+    openPlayer("AbCdEfGhI_j");
+    toggleCurrentFavorite();
+
+    assert(controls.speechRequests.length === 2, "Favorite should replace title speech with feedback");
+    assert(controls.speechRequests[1].text === "favorites", "the latest speech should match Favorite feedback");
+    assert(controls.getPlayerStartCount() === 0, "cancelled title speech should not start playback");
+    assert(els.playerFrameWrap.getAttribute("aria-busy") === "true", "player should remain busy during feedback");
+    assert(els.playerFrameWrap.querySelector(".player-preparing-thumbnail"), "the thumbnail should remain during feedback");
+    assert(els.favoriteButton.getAttribute("aria-pressed") === "true", "Favorite state should update immediately");
+
+    controls.completeSpeech(0);
+    assert(controls.getPlayerStartCount() === 0, "superseded title completion should remain inert");
+    controls.completeSpeech(1);
+    controls.fireAllTimers();
+
+    assert(controls.getPlayerStartCount() === 1, "playback should wait for the latest feedback");
+    assert(els.playerFrameWrap.querySelectorAll("iframe").length === 1, "latest feedback should create one iframe");
+  });
 });
 
 test("findSimilarVideo picks next shared-tag video", () => {

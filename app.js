@@ -3,7 +3,6 @@
 let state = loadState();
 let currentVideoId = null;
 let unlockReturnScreen = SCREEN.home;
-let speechPlaybackToken = 0;
 let editingVideoId = null;
 
 const screens = getScreens();
@@ -68,6 +67,7 @@ function getElements() {
     favoritesRow: getRequiredElement("favoritesRow"),
     kidVideoGrid: getRequiredElement("kidVideoGrid"),
     emptyKidMessage: getRequiredElement("emptyKidMessage"),
+    playerTitle: getRequiredElement("playerTitle"),
     playerFrameWrap: getRequiredElement("playerFrameWrap"),
     favoriteButton: getRequiredElement("favoriteButton"),
     similarButton: getRequiredElement("similarButton"),
