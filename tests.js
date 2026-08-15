@@ -51,6 +51,7 @@ function withControlledPlayerPlayback(run) {
   const previousPlayerStartToken = playerStartToken;
   const previousPendingTimeoutId = pendingPlayerStartTimeoutId;
   const previousPreparationPending = playerPreparationPending;
+  const previousPlayerOriginVideoId = playerOriginVideoId;
   const previousStartCurrentPlayer = startCurrentPlayer;
   const previousSpeak = speak;
   const previousStopSpeech = stopSpeech;
@@ -76,6 +77,7 @@ function withControlledPlayerPlayback(run) {
   playerStartToken = 0;
   pendingPlayerStartTimeoutId = null;
   playerPreparationPending = false;
+  playerOriginVideoId = null;
   els.playerFrameWrap.innerHTML = "";
   els.playerFrameWrap.setAttribute("aria-busy", "false");
   els.playerTitle.textContent = "Player";
@@ -160,6 +162,7 @@ function withControlledPlayerPlayback(run) {
     playerStartToken = previousPlayerStartToken;
     pendingPlayerStartTimeoutId = previousPendingTimeoutId;
     playerPreparationPending = previousPreparationPending;
+    playerOriginVideoId = previousPlayerOriginVideoId;
     els.playerFrameWrap.innerHTML = "";
     els.playerFrameWrap.setAttribute("aria-busy", "false");
     els.playerFrameWrap.removeAttribute("aria-describedby");
@@ -531,6 +534,67 @@ test("video actions preserve unsaved Parent settings", () => {
   }
 });
 
+test("Home to Kid Mode focuses the Kid heading", () => {
+  const previousRequestKidFullscreen = requestKidFullscreen;
+  const previousSpeak = speak;
+  const previousScreen = getActiveScreenName();
+  requestKidFullscreen = () => {};
+  speak = () => {};
+  try {
+    showScreen(SCREEN.home);
+    enterKidMode();
+
+    assert(screens[SCREEN.kid].classList.contains("active"), "Kid Mode should become active");
+    assert(document.activeElement === els.kidTitle, "Kid Mode should focus its heading");
+  } finally {
+    requestKidFullscreen = previousRequestKidFullscreen;
+    speak = previousSpeak;
+    showScreen(previousScreen);
+  }
+});
+
+test("successful Parent unlock focuses the Parent heading", () => {
+  const previousState = state;
+  const previousScreen = getActiveScreenName();
+  state = normalizeState({ settings: { unlockCode: "2468" }, videos: [] });
+  try {
+    showScreen(SCREEN.unlock);
+    els.unlockCode.value = "2468";
+    handleParentUnlock({ preventDefault() {} });
+
+    assert(screens[SCREEN.parent].classList.contains("active"), "Parent Mode should become active");
+    assert(document.activeElement === els.parentTitle, "Parent Mode should focus its heading");
+  } finally {
+    state = previousState;
+    showScreen(previousScreen);
+  }
+});
+
+test("Kid video content precedes Parent entry in sequential DOM order", () => {
+  const previousState = state;
+  try {
+    state = normalizeState({
+      settings: {},
+      videos: [
+        { id: "AbCdEfGhI_j", title: "Favorite", favorite: "true" },
+        { id: "BbCdEfGhI_j", title: "Approved" }
+      ]
+    });
+    renderKid();
+
+    const tiles = screens[SCREEN.kid].querySelectorAll(".video-tile");
+    assert(tiles.length === 2, "Kid Mode should render both approved videos");
+    tiles.forEach((tile) => {
+      const position = tile.compareDocumentPosition(els.kidParentButton);
+      assert(position & Node.DOCUMENT_POSITION_FOLLOWING, "Parent entry should follow every video tile");
+    });
+    assert(els.kidParentButton.tabIndex === 0, "Parent entry should remain keyboard accessible");
+  } finally {
+    state = previousState;
+    renderKid();
+  }
+});
+
 test("player waits for startup speech and replaces Preparing with one iframe", () => {
   withControlledPlayerPlayback((controls) => {
     openPlayer("AbCdEfGhI_j");
@@ -539,6 +603,7 @@ test("player waits for startup speech and replaces Preparing with one iframe", (
     assert(controls.getPlayerStartCount() === 0, "playback should wait for title speech");
     assert(els.playerFrameWrap.getAttribute("aria-busy") === "true", "player should be busy while preparing");
     assert(els.playerTitle.textContent === "Trains", "the current video title should label the player");
+    assert(document.activeElement === els.playerTitle, "opening a video should focus the Player title");
     assert(thumbnail && thumbnail.src.includes("AbCdEfGhI_j"), "the selected thumbnail should remain visible");
     assert(els.playerFrameWrap.textContent === "Preparing", "Preparing should be visible");
     assert(!els.playerFrameWrap.querySelector("iframe"), "no iframe should exist before speech completes");
@@ -581,6 +646,37 @@ test("Home invalidates pending playback and removes the player", () => {
     assert(currentVideoId === null, "Home should clear the current video");
     assert(els.playerFrameWrap.children.length === 0, "Home should leave no iframe or preparation UI");
     assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "Home should clear the busy state");
+    assert(document.activeElement.dataset.videoId === "AbCdEfGhI_j", "Home should focus the originating tile");
+  });
+});
+
+test("Player Home falls back to the Kid heading when its origin is gone", () => {
+  withControlledPlayerPlayback(() => {
+    openPlayer("AbCdEfGhI_j");
+    state.videos = state.videos.filter((video) => video.id !== "AbCdEfGhI_j");
+
+    returnToKidMode();
+
+    assert(document.activeElement === els.kidTitle, "a missing origin should focus the Kid heading");
+  });
+});
+
+test("YouTube iframe tab behavior follows the controls setting", () => {
+  withControlledPlayerPlayback((controls) => {
+    state.settings.youtubeControls = false;
+    openPlayer("AbCdEfGhI_j");
+    controls.completeSpeech(0);
+
+    const hiddenControlsFrame = els.playerFrameWrap.querySelector("iframe");
+    assert(hiddenControlsFrame.tabIndex === -1, "hidden controls should remove the iframe from Tab order");
+
+    returnToKidMode();
+    state.settings.youtubeControls = true;
+    openPlayer("AbCdEfGhI_j");
+    controls.completeSpeech(1);
+
+    const visibleControlsFrame = els.playerFrameWrap.querySelector("iframe");
+    assert(!visibleControlsFrame.hasAttribute("tabindex"), "visible controls should keep native iframe Tab behavior");
   });
 });
 

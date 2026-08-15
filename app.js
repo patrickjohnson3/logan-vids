@@ -34,6 +34,7 @@ function getElements() {
     app: getRequiredElement("app"),
     kidModeButton: getRequiredElement("kidModeButton"),
     kidTitle: getRequiredElement("kidTitle"),
+    parentTitle: getRequiredElement("parentTitle"),
     parentModeButton: getRequiredElement("parentModeButton"),
     kidParentButton: getRequiredElement("kidParentButton"),
     unlockBackButton: getRequiredElement("unlockBackButton"),
@@ -85,11 +86,7 @@ function init() {
 }
 
 function bindEvents() {
-  els.kidModeButton.addEventListener("click", () => {
-    requestKidFullscreen();
-    speak(els.kidTitle.textContent);
-    showScreen(SCREEN.kid);
-  });
+  els.kidModeButton.addEventListener("click", enterKidMode);
 
   els.parentModeButton.addEventListener("click", () => openParentUnlock(SCREEN.home));
   els.kidParentButton.addEventListener("click", () => openParentUnlock(SCREEN.kid));
@@ -99,15 +96,7 @@ function bindEvents() {
     button.addEventListener("click", () => showScreen(SCREEN.home));
   });
 
-  els.unlockForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (els.unlockCode.value === state.settings.unlockCode) {
-      setMessage(els.unlockMessage, "");
-      showScreen(SCREEN.parent);
-    } else {
-      setMessage(els.unlockMessage, MESSAGES.unlockFailed);
-    }
-  });
+  els.unlockForm.addEventListener("submit", handleParentUnlock);
 
   els.settingSpeechRate.addEventListener("input", () => {
     els.speechRateOutput.value = els.settingSpeechRate.value;
@@ -123,6 +112,24 @@ function bindEvents() {
   els.similarButton.addEventListener("click", playSimilarVideo);
   els.againButton.addEventListener("click", playCurrentAgain);
   els.playerHomeButton.addEventListener("click", returnToKidMode);
+}
+
+function enterKidMode() {
+  requestKidFullscreen();
+  speak(els.kidTitle.textContent);
+  showScreen(SCREEN.kid);
+  focusWithoutScrolling(els.kidTitle);
+}
+
+function handleParentUnlock(event) {
+  event.preventDefault();
+  if (els.unlockCode.value === state.settings.unlockCode) {
+    setMessage(els.unlockMessage, "");
+    showScreen(SCREEN.parent);
+    focusWithoutScrolling(els.parentTitle);
+  } else {
+    setMessage(els.unlockMessage, MESSAGES.unlockFailed);
+  }
 }
 
 function showScreen(name) {
@@ -152,15 +159,15 @@ function openParentUnlock(returnScreen) {
   els.unlockBackButton.textContent = returnScreen === SCREEN.kid ? "Back" : "Home";
   setMessage(els.unlockMessage, "");
   showScreen(SCREEN.unlock);
-  els.unlockCode.focus();
+  focusWithoutScrolling(els.unlockCode);
 }
 
 function closeParentUnlock() {
   showScreen(unlockReturnScreen);
   if (unlockReturnScreen === SCREEN.kid) {
-    els.kidParentButton.focus();
+    focusWithoutScrolling(els.kidParentButton);
   } else {
-    els.parentModeButton.focus();
+    focusWithoutScrolling(els.parentModeButton);
   }
 }
 
@@ -336,4 +343,12 @@ function makeSmallButton(label, onClick, disabled, className) {
 
 function setMessage(element, text) {
   element.textContent = text;
+}
+
+function focusWithoutScrolling(element) {
+  try {
+    element.focus({ preventScroll: true });
+  } catch {
+    element.focus();
+  }
 }

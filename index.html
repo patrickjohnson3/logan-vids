@@ -43,7 +43,7 @@
         </header>
         <div class="screen-topline">
           <button class="quiet-link" data-go-home type="button">Home</button>
-          <h2 id="parentTitle">Parent mode</h2>
+          <h2 id="parentTitle" tabindex="-1">Parent mode</h2>
         </div>
 
         <section class="panel" aria-labelledby="settingsTitle">
@@ -129,8 +129,7 @@
 
       <section id="kidScreen" class="screen kid-layout" aria-labelledby="kidTitle">
         <div class="screen-topline kid-topline">
-          <h2 id="kidTitle">What would you like to watch?</h2>
-          <button id="kidParentButton" class="parent-entry" type="button" aria-label="Parent mode" title="Parent mode">🔒</button>
+          <h2 id="kidTitle" tabindex="-1">What would you like to watch?</h2>
         </div>
         <section id="favoritesSection" aria-labelledby="favoritesTitle">
           <h3 id="favoritesTitle">Favorites</h3>
@@ -141,10 +140,11 @@
           <div id="kidVideoGrid" class="kid-grid"></div>
           <p id="emptyKidMessage" class="empty-note">Ask a parent to add videos.</p>
         </section>
+        <button id="kidParentButton" class="parent-entry" type="button" aria-label="Parent mode" title="Parent mode">🔒</button>
       </section>
 
       <section id="playerScreen" class="screen player-layout" aria-labelledby="playerTitle">
-        <h2 id="playerTitle" class="sr-only">Player</h2>
+        <h2 id="playerTitle" class="sr-only" tabindex="-1">Player</h2>
         <div class="player-video-area">
           <button id="playerHomeButton" class="player-home-button" type="button" aria-label="Home" title="Home"><span aria-hidden="true">🏠</span></button>
           <div id="playerFrameWrap" class="player-frame-wrap" role="group" aria-labelledby="playerTitle" aria-busy="false"></div>

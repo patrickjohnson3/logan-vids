@@ -17,7 +17,12 @@
       }
 
       .fixture {
-        display: none;
+        position: fixed;
+        top: 0;
+        left: -10000px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
       }
     </style>
   </head>
@@ -27,7 +32,6 @@
 
     <main id="app" class="fixture">
       <section id="homeScreen" class="screen active">
-        <h2 id="kidTitle">What would you like to watch?</h2>
         <button id="kidModeButton" type="button"></button>
         <button id="parentModeButton" type="button"></button>
       </section>
@@ -39,6 +43,7 @@
         </form>
       </section>
       <section id="parentScreen" class="screen">
+        <h2 id="parentTitle" tabindex="-1">Parent mode</h2>
         <input id="settingCode">
         <input id="settingAudioFeedback" type="checkbox">
         <input id="settingYouTubeControls" type="checkbox">
@@ -66,13 +71,14 @@
         <p id="tomlMessage"></p>
       </section>
       <section id="kidScreen" class="screen">
-        <button id="kidParentButton" type="button"></button>
+        <h2 id="kidTitle" tabindex="-1">What would you like to watch?</h2>
         <section id="favoritesSection"><div id="favoritesRow"></div></section>
         <div id="kidVideoGrid"></div>
         <p id="emptyKidMessage"></p>
+        <button id="kidParentButton" type="button"></button>
       </section>
       <section id="playerScreen" class="screen">
-        <h2 id="playerTitle">Player</h2>
+        <h2 id="playerTitle" tabindex="-1">Player</h2>
         <div id="playerFrameWrap" role="group" aria-labelledby="playerTitle" aria-busy="false"></div>
         <button id="favoriteButton" type="button"><span class="favorite-icon"></span><span class="player-button-label"></span></button>
         <button id="similarButton" type="button"></button>

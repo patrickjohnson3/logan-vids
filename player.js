@@ -5,15 +5,18 @@
 let playerStartToken = 0;
 let pendingPlayerStartTimeoutId = null;
 let playerPreparationPending = false;
+let playerOriginVideoId = null;
 
 function openPlayer(id) {
   const video = findVideo(id);
   if (!video) return;
 
   currentVideoId = video.id;
+  playerOriginVideoId = video.id;
   renderPlayerControls(video);
   renderPlayerPreparing(video);
   showScreen(SCREEN.player);
+  focusWithoutScrolling(els.playerTitle);
 
   // Wait for the tile label before starting the video, so the two audio cues do not compete.
   startPlayerAfterSpeech(video.title, video.id);
@@ -42,6 +45,7 @@ function startCurrentPlayer(autoplay) {
   iframe.allow = "autoplay; encrypted-media";
   iframe.sandbox = "allow-scripts allow-same-origin";
   iframe.referrerPolicy = "strict-origin-when-cross-origin";
+  if (!state.settings.youtubeControls) iframe.tabIndex = -1;
   iframe.src = buildEmbedUrl(
     video.id,
     autoplay,
@@ -204,6 +208,7 @@ function invalidatePendingPlayerStart() {
 }
 
 function leavePlayer() {
+  const returnFocusVideoId = playerOriginVideoId;
   invalidatePendingPlayerStart();
   stopSpeech();
   els.playerFrameWrap.innerHTML = "";
@@ -211,7 +216,11 @@ function leavePlayer() {
   els.playerFrameWrap.removeAttribute("aria-describedby");
   els.playerTitle.textContent = "Player";
   currentVideoId = null;
+  playerOriginVideoId = null;
   showScreen(SCREEN.kid);
+  const returnTile = Array.from(screens[SCREEN.kid].querySelectorAll(".video-tile"))
+    .find((tile) => tile.dataset.videoId === returnFocusVideoId);
+  focusWithoutScrolling(returnTile || els.kidTitle);
 }
 
 function returnToKidMode() {

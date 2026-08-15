@@ -28,6 +28,7 @@ function makeVideoTile(video) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "video-tile";
+  button.dataset.videoId = video.id;
   button.setAttribute(
     "aria-label",
     isFavoriteVideo(video) ? `${video.title}, favorite` : video.title
