@@ -369,7 +369,6 @@ function normalizeVideo(video) {
     title: String(video.title || "Untitled"),
     tags: normalizeTags(video.tags || ""),
     youtubeUrl: normalizeStoredYouTubeUrl(video),
-    embedUrl: buildEmbedUrl(video.id),
     favorite: video.favorite === "true" ? "true" : "false"
   };
 }
