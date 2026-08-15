@@ -104,6 +104,7 @@ Downloaded TOML reflects the current in-memory state. During normal operation th
 - `render-kid.js`: Kid Mode rendering
 - `player.js`: player lifecycle and player controls
 - `tests.html` and `tests.js`: no-framework browser helper tests
+- `validate-structure.js`: required startup ID and classic-script order check
 - `TODO.md`: focused cleanup and target-device verification backlog
 
 ## Script conventions
@@ -137,6 +138,13 @@ node --check render-parent.js
 node --check render-kid.js
 node --check player.js
 node --check tests.js
+node --check validate-structure.js
+```
+
+Validate the required production/test DOM IDs and classic-script order:
+
+```bash
+node validate-structure.js
 ```
 
 To run the no-framework browser helper tests, open `tests.html` directly in a browser or from the local static server. A passing run shows a green page with only `PASS` lines.

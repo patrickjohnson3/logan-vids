@@ -47,14 +47,16 @@ loads the same source files as the application, so no nested `AGENTS.md` is need
 - `tests.html` is a DOM fixture and browser test runner; `tests.js` contains the
   no-framework helper/regression tests. `README.md` is the authoritative user and
   operator documentation.
+- `validate-structure.js` checks required startup IDs in both HTML files and enforces
+  their classic-script load order using Node built-ins only.
 - `TODO.md` tracks concrete cleanup and target-device verification. Keep it scoped;
   architecture modernization is not an implicit TODO.
 
-All scripts are classic scripts so the app works from `file://`. They share one
-global scope and depend on the order in `index.html` and `tests.html`. Use unique,
-concern-specific top-level names. When adding or moving a script, preserve dependency
-order in both HTML files. When adding a required element ID, update `getElements()`
-and the matching `tests.html` fixture together.
+All application scripts loaded by the HTML pages are classic scripts so the app works
+from `file://`. They share one global scope and depend on the order in `index.html`
+and `tests.html`. Use unique, concern-specific top-level names. When adding or moving
+a script, preserve dependency order in both HTML files. When adding a required element
+ID, update `getElements()` and the matching `tests.html` fixture together.
 
 ## Runtime and Data Invariants
 
@@ -154,7 +156,11 @@ node --check render-parent.js
 node --check render-kid.js
 node --check player.js
 node --check tests.js
+node --check validate-structure.js
 ```
+
+Run `node validate-structure.js` after changing required element IDs, `getElements()`,
+or script tags in either HTML file.
 
 Open `tests.html` directly or through the static server and require a green page with
 only `PASS` lines. Add or update tests when changing pure URL, state, migration, tag,

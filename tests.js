@@ -1341,6 +1341,99 @@ test("alphabetical Kid grid order does not change saved order", () => {
   }
 });
 
+// Keep this last: init() installs persistent listeners on the shared fixture.
+test("init wires the major Kid, Player, and Parent flows", () => {
+  const previousState = state;
+  const previousCurrentVideoId = currentVideoId;
+  const previousUnlockReturnScreen = unlockReturnScreen;
+  const previousEditingVideoId = editingVideoId;
+  const previousPlayerStartToken = playerStartToken;
+  const previousPendingTimeoutId = pendingPlayerStartTimeoutId;
+  const previousPreparationPending = playerPreparationPending;
+  const previousPlayerOriginVideoId = playerOriginVideoId;
+  const previousBrowserIsOnline = browserIsOnline;
+  const previousScreen = getActiveScreenName();
+  const hadOwnRequestFullscreen = Object.prototype.hasOwnProperty.call(
+    els.app,
+    "requestFullscreen"
+  );
+  const previousRequestFullscreen = els.app.requestFullscreen;
+
+  try {
+    state = normalizeState({
+      settings: { audioFeedback: false, unlockCode: "2468" },
+      videos: [{ id: "AbCdEfGhI_j", title: "Trains" }]
+    });
+    currentVideoId = null;
+    editingVideoId = null;
+    browserIsOnline = () => true;
+    els.app.requestFullscreen = () => Promise.resolve();
+
+    init();
+
+    assert(screens[SCREEN.home].classList.contains("active"), "init should show Home");
+
+    els.kidModeButton.click();
+
+    assert(screens[SCREEN.kid].classList.contains("active"), "Kid Mode click should show Kid Mode");
+    assert(document.activeElement === els.kidTitle, "Kid Mode click should focus its heading");
+
+    const tile = els.kidVideoGrid.querySelector("[data-video-id=AbCdEfGhI_j]");
+    assert(tile, "Kid Mode should render the approved video tile");
+    tile.click();
+
+    assert(screens[SCREEN.player].classList.contains("active"), "tile click should show Player");
+    assert(currentVideoId === "AbCdEfGhI_j", "tile click should select its video");
+    assert(document.activeElement === els.playerTitle, "tile click should focus the Player title");
+    assert(els.playerFrameWrap.querySelector("iframe"), "tile click should create the player iframe");
+
+    els.playerHomeButton.click();
+
+    assert(screens[SCREEN.kid].classList.contains("active"), "Player Home should return to Kid Mode");
+    assert(currentVideoId === null, "Player Home should clear the current video");
+    assert(!els.playerFrameWrap.querySelector("iframe"), "Player Home should remove the iframe");
+    assert(document.activeElement.dataset.videoId === "AbCdEfGhI_j", "Player Home should restore tile focus");
+
+    els.kidParentButton.click();
+    assert(screens[SCREEN.unlock].classList.contains("active"), "Parent entry should show unlock");
+    assert(document.activeElement === els.unlockCode, "Parent entry should focus the code field");
+
+    els.unlockCode.value = "0000";
+    els.unlockForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    assert(screens[SCREEN.unlock].classList.contains("active"), "wrong code should remain on unlock");
+    assert(els.unlockMessage.textContent === MESSAGES.unlockFailed, "wrong code should report rejection");
+    assert(document.activeElement === els.unlockCode, "wrong code should retain code-field focus");
+
+    els.unlockCode.value = "2468";
+    els.unlockForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    assert(screens[SCREEN.parent].classList.contains("active"), "correct code should show Parent Mode");
+    assert(document.activeElement === els.parentTitle, "correct code should focus the Parent heading");
+  } finally {
+    invalidatePendingPlayerStart();
+    els.playerFrameWrap.innerHTML = "";
+    els.playerFrameWrap.setAttribute("aria-busy", "false");
+    els.unlockCode.value = "";
+    els.unlockMessage.textContent = "";
+    browserIsOnline = previousBrowserIsOnline;
+    if (hadOwnRequestFullscreen) {
+      els.app.requestFullscreen = previousRequestFullscreen;
+    } else {
+      delete els.app.requestFullscreen;
+    }
+    state = previousState;
+    currentVideoId = previousCurrentVideoId;
+    unlockReturnScreen = previousUnlockReturnScreen;
+    editingVideoId = previousEditingVideoId;
+    playerStartToken = previousPlayerStartToken;
+    pendingPlayerStartTimeoutId = previousPendingTimeoutId;
+    playerPreparationPending = previousPreparationPending;
+    playerOriginVideoId = previousPlayerOriginVideoId;
+    showScreen(previousScreen);
+  }
+});
+
 function runTests() {
   const output = [];
   let failures = 0;
