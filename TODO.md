@@ -31,9 +31,6 @@ check is completed or when browser behavior changes.
 - [ ] Decide whether accepted input URLs must explicitly use `http:` or `https:`, then
   enforce and test the decision. The current parser checks host and path and always
   stores a canonical HTTPS watch URL.
-- [ ] Confirm that `renderCurrentScreen()` and `renderPlayer()` have no required
-  production caller, then remove the indirection if that remains true.
-- [ ] Remove the unused `textarea` CSS left behind when the TOML textareas were removed.
 - [ ] Remove repeated TOML video normalization passes while preserving validation,
   canonical URLs, deduplication, ordering, and the existing round-trip tests.
 

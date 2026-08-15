@@ -48,8 +48,7 @@ body {
 
 button,
 input,
-select,
-textarea {
+select {
   font: inherit;
 }
 
@@ -63,8 +62,7 @@ button {
 
 button:focus-visible,
 input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+select:focus-visible {
   outline: 4px solid var(--accent-2);
   outline-offset: 3px;
 }
@@ -244,8 +242,7 @@ label {
 }
 
 input,
-select,
-textarea {
+select {
   width: 100%;
   min-height: 52px;
   border: 2px solid var(--line);
@@ -253,13 +250,6 @@ textarea {
   padding: 12px;
   background: var(--bg);
   color: var(--text);
-}
-
-textarea {
-  min-height: 160px;
-  resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.9rem;
 }
 
 .code-input {

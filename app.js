@@ -82,7 +82,6 @@ function getElements() {
 function init() {
   applyTheme();
   bindEvents();
-  renderCurrentScreen();
   showScreen(SCREEN.home);
 }
 
@@ -187,20 +186,6 @@ function closeParentUnlock() {
   } else {
     focusWithoutScrolling(els.parentModeButton);
   }
-}
-
-// Rendering coordinator.
-
-function renderCurrentScreen() {
-  applyTheme();
-  const screenName = getActiveScreenName();
-  if (screenName === SCREEN.parent) renderParent();
-  if (screenName === SCREEN.kid) renderKid();
-  if (screenName === SCREEN.player) renderPlayer();
-}
-
-function getActiveScreenName() {
-  return Object.keys(screens).find((name) => screens[name].classList.contains("active")) || SCREEN.home;
 }
 
 function applyTheme() {

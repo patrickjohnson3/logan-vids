@@ -48,7 +48,6 @@ function withControlledPersistence(run) {
 function withParentVideoState(videos, run) {
   const previousState = state;
   const previousEditingVideoId = editingVideoId;
-  const previousScreen = getActiveScreenName();
   state = normalizeState({ settings: {}, videos });
   editingVideoId = null;
   setMessage(els.settingsMessage, "");
@@ -78,7 +77,7 @@ function withParentVideoState(videos, run) {
     setMessage(els.savedVideosMessage, "");
     state = previousState;
     editingVideoId = previousEditingVideoId;
-    showScreen(previousScreen);
+    showScreen(SCREEN.home);
   }
 }
 
@@ -99,7 +98,6 @@ function withControlledPlayerPlayback(run) {
   const previousBrowserIsOnline = browserIsOnline;
   const previousSetTimeout = window.setTimeout;
   const previousClearTimeout = window.clearTimeout;
-  const previousScreen = getActiveScreenName();
   const speechRequests = [];
   const timers = new Map();
   let activeSpeech = null;
@@ -208,7 +206,7 @@ function withControlledPlayerPlayback(run) {
     els.playerFrameWrap.setAttribute("aria-busy", "false");
     els.playerFrameWrap.removeAttribute("aria-describedby");
     els.playerTitle.textContent = "Player";
-    showScreen(previousScreen);
+    showScreen(SCREEN.home);
   }
 }
 
@@ -388,6 +386,9 @@ test("complete compatible TOML import replaces and persists runtime state", () =
       assert(tagsToString(state.videos[0].tags) === "trains, calm", "import should normalize tags");
       assert(state.videos[0].favorite === "true", "import should preserve favorites");
       assert(JSON.stringify(storedState) === JSON.stringify(state), "import should persist the runtime replacement");
+      assert(document.body.classList.contains("light"), "import should apply the replacement theme");
+      assert(els.settingCode.value === "987654", "import should refresh Parent settings");
+      assert(els.parentVideoList.children.length === 2, "import should refresh the Parent video list");
       assert(els.tomlMessage.textContent === MESSAGES.tomlImported, "successful import should be reported");
     } finally {
       window.confirm = previousConfirm;
@@ -1017,7 +1018,6 @@ test("Settings custom validation focuses and describes the invalid field", () =>
 test("Home to Kid Mode focuses the Kid heading", () => {
   const previousRequestKidFullscreen = requestKidFullscreen;
   const previousSpeak = speak;
-  const previousScreen = getActiveScreenName();
   requestKidFullscreen = () => {};
   speak = () => {};
   try {
@@ -1029,13 +1029,12 @@ test("Home to Kid Mode focuses the Kid heading", () => {
   } finally {
     requestKidFullscreen = previousRequestKidFullscreen;
     speak = previousSpeak;
-    showScreen(previousScreen);
+    showScreen(SCREEN.home);
   }
 });
 
 test("successful Parent unlock focuses the Parent heading", () => {
   const previousState = state;
-  const previousScreen = getActiveScreenName();
   state = normalizeState({ settings: { unlockCode: "2468" }, videos: [] });
   try {
     showScreen(SCREEN.unlock);
@@ -1046,7 +1045,7 @@ test("successful Parent unlock focuses the Parent heading", () => {
     assert(document.activeElement === els.parentTitle, "Parent Mode should focus its heading");
   } finally {
     state = previousState;
-    showScreen(previousScreen);
+    showScreen(SCREEN.home);
   }
 });
 
@@ -1352,7 +1351,6 @@ test("init wires the major Kid, Player, and Parent flows", () => {
   const previousPreparationPending = playerPreparationPending;
   const previousPlayerOriginVideoId = playerOriginVideoId;
   const previousBrowserIsOnline = browserIsOnline;
-  const previousScreen = getActiveScreenName();
   const hadOwnRequestFullscreen = Object.prototype.hasOwnProperty.call(
     els.app,
     "requestFullscreen"
@@ -1430,7 +1428,7 @@ test("init wires the major Kid, Player, and Parent flows", () => {
     pendingPlayerStartTimeoutId = previousPendingTimeoutId;
     playerPreparationPending = previousPreparationPending;
     playerOriginVideoId = previousPlayerOriginVideoId;
-    showScreen(previousScreen);
+    showScreen(SCREEN.home);
   }
 });
 

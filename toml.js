@@ -37,7 +37,8 @@ function importToml(text, storage) {
   }
 
   const persisted = replaceState(result.state, storage);
-  renderCurrentScreen();
+  applyTheme();
+  renderParent();
   setMessage(
     els.tomlMessage,
     persisted ? MESSAGES.tomlImported : MESSAGES.importSessionOnly

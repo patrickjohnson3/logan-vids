@@ -54,12 +54,6 @@ function startCurrentPlayer(autoplay) {
   els.playerFrameWrap.append(iframe);
 }
 
-function renderPlayer() {
-  const video = findVideo(currentVideoId);
-  renderPlayerControls(video);
-  if (video) els.playerTitle.textContent = video.title;
-}
-
 function toggleCurrentFavorite() {
   const video = findVideo(currentVideoId);
   if (!video) return;
