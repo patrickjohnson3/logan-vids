@@ -55,12 +55,15 @@ const DEFAULT_STATE = {
 
 // State and persistence.
 
-function loadState() {
-  if (IS_TEST_MODE) return cloneDefaultState();
+function loadState(storage) {
+  if (IS_TEST_MODE && !storage) return cloneDefaultState();
+
+  storageWarning = "";
+  storageWriteBlocked = false;
 
   let saved;
   try {
-    saved = localStorage.getItem(STORAGE_KEY);
+    saved = (storage || localStorage).getItem(STORAGE_KEY);
   } catch {
     storageWarning = MESSAGES.storageUnavailable;
     return cloneDefaultState();
@@ -81,16 +84,16 @@ function loadState() {
   }
 }
 
-function persistState() {
+function persistState(storage) {
   if (storageWriteBlocked) {
     storageWarning = MESSAGES.storageNewer;
     return false;
   }
-  if (IS_TEST_MODE) return true;
+  if (IS_TEST_MODE && !storage) return true;
 
   let persisted = true;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    (storage || localStorage).setItem(STORAGE_KEY, JSON.stringify(state));
     storageWarning = "";
   } catch {
     persisted = false;
@@ -104,10 +107,10 @@ function updateState(mutator) {
   return persistState();
 }
 
-function replaceState(nextState) {
+function replaceState(nextState, storage) {
   state = nextState;
   storageWriteBlocked = false;
-  return persistState();
+  return persistState(storage);
 }
 
 function getVideos() {
@@ -347,6 +350,9 @@ function normalizeSettings(settings) {
   });
 
   const defaults = cloneDefaultState().settings;
+  if (typeof normalized.unlockCode === "number") {
+    normalized.unlockCode = String(normalized.unlockCode);
+  }
   if (!/^\d{4,12}$/.test(normalized.unlockCode)) {
     normalized.unlockCode = defaults.unlockCode;
   }
@@ -366,9 +372,29 @@ function normalizeVideo(video) {
   if (!video || !isValidVideoId(video.id)) return null;
   return {
     id: video.id,
-    title: String(video.title || "Untitled"),
-    tags: normalizeTags(video.tags || ""),
+    title: normalizeStoredVideoTitle(video.title),
+    tags: normalizeStoredVideoTags(video.tags),
     youtubeUrl: normalizeStoredYouTubeUrl(video),
     favorite: video.favorite === "true" ? "true" : "false"
   };
+}
+
+function normalizeStoredVideoTitle(value) {
+  const title = String(value || "").trim() || "Untitled";
+  return title.slice(0, MAX_TITLE_LENGTH);
+}
+
+function normalizeStoredVideoTags(value) {
+  const fittedTags = [];
+  let fittedLength = 0;
+
+  normalizeTags(value || "").forEach((tag) => {
+    const separatorLength = fittedTags.length > 0 ? 2 : 0;
+    const nextLength = fittedLength + separatorLength + tag.length;
+    if (nextLength > MAX_TAGS_LENGTH) return;
+    fittedTags.push(tag);
+    fittedLength = nextLength;
+  });
+
+  return fittedTags;
 }

@@ -11,6 +11,40 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function makeTestStorage(initialValue = null, failures = {}) {
+  let storedValue = initialValue;
+  return {
+    getItem(key) {
+      assert(key === STORAGE_KEY, "storage should read the Repeat key");
+      if (failures.read) throw new Error("read failed");
+      return storedValue;
+    },
+    setItem(key, value) {
+      assert(key === STORAGE_KEY, "storage should write the Repeat key");
+      if (failures.write) throw new Error("write failed");
+      storedValue = String(value);
+    },
+    getStoredValue() {
+      return storedValue;
+    }
+  };
+}
+
+function withControlledPersistence(run) {
+  const previousState = state;
+  const previousStorageWarning = storageWarning;
+  const previousStorageWriteBlocked = storageWriteBlocked;
+  storageWarning = "";
+  storageWriteBlocked = false;
+  try {
+    run();
+  } finally {
+    state = previousState;
+    storageWarning = previousStorageWarning;
+    storageWriteBlocked = previousStorageWriteBlocked;
+  }
+}
+
 function withControlledPlayerPlayback(run) {
   const previousState = state;
   const previousCurrentVideoId = currentVideoId;
@@ -311,21 +345,165 @@ test("normalizeState migrates unversioned saved state", () => {
   assert(normalized.schemaVersion === CURRENT_SCHEMA_VERSION, "schema version should be current");
 });
 
-test("newer stored schemas block persistence", () => {
-  const previousStorageWriteBlocked = storageWriteBlocked;
-  const previousStorageWarning = storageWarning;
-  try {
-    storageWriteBlocked = hasFutureSchemaVersion({
-      schemaVersion: CURRENT_SCHEMA_VERSION + 1
+test("loadState reads compatible state from supplied storage", () => {
+  withControlledPersistence(() => {
+    const payload = JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      settings: { theme: "light" },
+      videos: [{ id: "AbCdEfGhI_j", title: "Stored video" }]
     });
-    storageWarning = "";
+    const storage = makeTestStorage(payload);
 
-    assert(!persistState(), "newer saved state should not be overwritten");
-    assert(storageWarning === MESSAGES.storageNewer, "a recovery warning should be available");
-  } finally {
-    storageWriteBlocked = previousStorageWriteBlocked;
-    storageWarning = previousStorageWarning;
-  }
+    const loaded = loadState(storage);
+
+    assert(loaded.settings.theme === "light", "compatible settings should load");
+    assert(loaded.videos.length === 1, "compatible videos should load");
+    assert(loaded.videos[0].title === "Stored video", "stored metadata should load");
+    assert(storageWarning === "", "compatible storage should not warn");
+    assert(!storageWriteBlocked, "compatible storage should remain writable");
+    assert(storage.getStoredValue() === payload, "loading should not rewrite storage");
+  });
+});
+
+test("loadState handles throwing storage reads", () => {
+  withControlledPersistence(() => {
+    const storage = makeTestStorage(null, { read: true });
+
+    const loaded = loadState(storage);
+
+    assert(loaded.videos.length === 0, "failed reads should return an empty library");
+    assert(loaded.settings.unlockCode === DEFAULT_STATE.settings.unlockCode, "failed reads should use safe defaults");
+    assert(storageWarning === MESSAGES.storageUnavailable, "failed reads should expose the storage warning");
+    assert(!storageWriteBlocked, "failed reads should not create a schema write block");
+  });
+});
+
+test("loadState handles malformed stored JSON without replacing it", () => {
+  withControlledPersistence(() => {
+    const malformedPayload = "{not valid json";
+    const storage = makeTestStorage(malformedPayload);
+
+    const loaded = loadState(storage);
+
+    assert(loaded.videos.length === 0, "malformed JSON should return an empty library");
+    assert(storageWarning === MESSAGES.storageUnreadable, "malformed JSON should expose the unreadable warning");
+    assert(storage.getStoredValue() === malformedPayload, "malformed storage should remain untouched");
+  });
+});
+
+test("newer stored schemas block writes and preserve their payload", () => {
+  withControlledPersistence(() => {
+    const futurePayload = JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION + 1,
+      settings: { theme: "light" },
+      videos: [{ id: "AbCdEfGhI_j", title: "Future video" }]
+    });
+    const storage = makeTestStorage(futurePayload);
+    state = loadState(storage);
+
+    state.settings.theme = "dark";
+    const sessionState = JSON.stringify(state);
+    const persisted = persistState(storage);
+
+    assert(!persisted, "newer stored state should block writes");
+    assert(storageWriteBlocked, "newer stored state should retain the write block");
+    assert(storageWarning === MESSAGES.storageNewer, "newer stored state should expose its warning");
+    assert(storage.getStoredValue() === futurePayload, "newer stored payload should remain byte-for-byte unchanged");
+    assert(JSON.stringify(state) === sessionState, "blocked writes should retain session changes");
+  });
+});
+
+test("failed storage writes preserve session state and existing data", () => {
+  withControlledPersistence(() => {
+    const savedPayload = JSON.stringify({ schemaVersion: CURRENT_SCHEMA_VERSION, videos: [] });
+    const storage = makeTestStorage(savedPayload, { write: true });
+    state = normalizeState({
+      settings: { theme: "light" },
+      videos: [{ id: "AbCdEfGhI_j", title: "Session video" }]
+    });
+    const sessionState = JSON.stringify(state);
+
+    const persisted = persistState(storage);
+
+    assert(!persisted, "throwing writes should report failure");
+    assert(JSON.stringify(state) === sessionState, "throwing writes should retain session state");
+    assert(storage.getStoredValue() === savedPayload, "throwing writes should preserve existing storage");
+    assert(storageWarning === MESSAGES.storageUnavailable, "throwing writes should expose the storage warning");
+  });
+});
+
+test("compatible TOML replacement clears a newer-schema write block", () => {
+  withControlledPersistence(() => {
+    const futurePayload = JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION + 1,
+      settings: { theme: "dark" },
+      videos: []
+    });
+    const storage = makeTestStorage(futurePayload);
+    state = loadState(storage);
+    const result = parseRepeatToml([
+      "[settings]",
+      'unlockCode = "9876"',
+      'theme = "light"'
+    ].join("\n"));
+    assert(result.ok, result.message);
+
+    const persisted = replaceState(result.state, storage);
+    const storedState = JSON.parse(storage.getStoredValue());
+
+    assert(persisted, "compatible TOML state should persist");
+    assert(!storageWriteBlocked, "compatible TOML state should clear the write block");
+    assert(storageWarning === "", "compatible replacement should clear the warning");
+    assert(storedState.schemaVersion === CURRENT_SCHEMA_VERSION, "replacement should store the current schema");
+    assert(storedState.settings.unlockCode === "9876", "replacement should store imported settings");
+    assert(storedState.settings.theme === "light", "replacement should replace the future state");
+  });
+});
+
+test("numeric persisted unlock codes normalize to usable strings", () => {
+  withControlledPersistence(() => {
+    const storage = makeTestStorage(JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      settings: { unlockCode: 2468 },
+      videos: []
+    }));
+
+    const loaded = loadState(storage);
+
+    assert(loaded.settings.unlockCode === "2468", "numeric codes should become strings");
+    assert(typeof loaded.settings.unlockCode === "string", "unlock codes should use the input value type");
+  });
+});
+
+test("persisted video metadata normalizes safely within supported bounds", () => {
+  withControlledPersistence(() => {
+    const storage = makeTestStorage(JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      settings: {},
+      videos: [
+        {
+          id: "AbCdEfGhI_j",
+          title: "   ",
+          tags: ["x".repeat(MAX_TAGS_LENGTH + 1), "calm"]
+        },
+        {
+          id: "BbCdEfGhI_j",
+          title: `  ${"T".repeat(MAX_TITLE_LENGTH + 20)}  `,
+          tags: ["trains", "y".repeat(MAX_TAGS_LENGTH), "music"]
+        }
+      ]
+    }));
+
+    const loaded = loadState(storage);
+
+    assert(loaded.videos.length === 2, "valid video IDs should remain playable");
+    assert(loaded.videos[0].title === "Untitled", "blank stored titles should receive a safe label");
+    assert(loaded.videos[0].tags.join(", ") === "calm", "oversized tags should not remove later valid tags");
+    assert(loaded.videos[1].title.length === MAX_TITLE_LENGTH, "oversized stored titles should be truncated");
+    assert(loaded.videos[1].title === "T".repeat(MAX_TITLE_LENGTH), "stored titles should be trimmed before truncation");
+    assert(tagsToString(loaded.videos[1].tags).length <= MAX_TAGS_LENGTH, "stored tags should fit the supported bound");
+    assert(tagsToString(loaded.videos[1].tags) === "trains, music", "whole tags that fit should be preserved");
+  });
 });
 
 test("video actions preserve unsaved Parent settings", () => {
