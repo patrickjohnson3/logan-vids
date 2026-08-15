@@ -827,6 +827,30 @@ test("persisted video metadata normalizes safely within supported bounds", () =>
   });
 });
 
+test("malformed persisted metadata remains TOML round-trip safe", () => {
+  withControlledPersistence(() => {
+    const storage = makeTestStorage(JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      settings: {},
+      videos: [{
+        id: "AbCdEfGhI_j",
+        title: "  Train\r\n  Ride  ",
+        tags: ["calm\rquiet", "music\n \nsoft"]
+      }]
+    }));
+
+    const loaded = loadState(storage);
+    const exported = writeRepeatToml(loaded);
+    const parsed = parseRepeatToml(exported);
+
+    assert(loaded.videos[0].title === "Train Ride", "persisted title line breaks should collapse");
+    assert(tagsToString(loaded.videos[0].tags) === "calm quiet, music soft", "persisted tag line breaks should collapse");
+    assert(parsed.ok, parsed.message);
+    assert(parsed.state.videos[0].title === loaded.videos[0].title, "the normalized title should round trip");
+    assert(tagsToString(parsed.state.videos[0].tags) === tagsToString(loaded.videos[0].tags), "normalized tags should round trip");
+  });
+});
+
 test("video actions preserve unsaved Parent settings", () => {
   const previousState = state;
   const previousEditingVideoId = editingVideoId;
@@ -1396,15 +1420,19 @@ test("init wires the major Kid, Player, and Parent flows", () => {
     assert(screens[SCREEN.unlock].classList.contains("active"), "Parent entry should show unlock");
     assert(document.activeElement === els.unlockCode, "Parent entry should focus the code field");
 
+    const unlockSubmitButton = els.unlockForm.querySelector("button[type=submit]");
     els.unlockCode.value = "0000";
-    els.unlockForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    unlockSubmitButton.focus();
+    unlockSubmitButton.click();
 
     assert(screens[SCREEN.unlock].classList.contains("active"), "wrong code should remain on unlock");
+    assert(!screens[SCREEN.parent].classList.contains("active"), "wrong code should not open Parent Mode");
     assert(els.unlockMessage.textContent === MESSAGES.unlockFailed, "wrong code should report rejection");
-    assert(document.activeElement === els.unlockCode, "wrong code should retain code-field focus");
+    assert(document.activeElement === els.unlockCode, "wrong code should restore code-field focus");
 
     els.unlockCode.value = "2468";
-    els.unlockForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    unlockSubmitButton.focus();
+    unlockSubmitButton.click();
 
     assert(screens[SCREEN.parent].classList.contains("active"), "correct code should show Parent Mode");
     assert(document.activeElement === els.parentTitle, "correct code should focus the Parent heading");

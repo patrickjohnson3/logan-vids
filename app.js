@@ -146,6 +146,7 @@ function handleParentUnlock(event) {
     focusWithoutScrolling(els.parentTitle);
   } else {
     setMessage(els.unlockMessage, MESSAGES.unlockFailed);
+    focusWithoutScrolling(els.unlockCode);
   }
 }
 

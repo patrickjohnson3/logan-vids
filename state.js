@@ -380,15 +380,18 @@ function normalizeVideo(video) {
 }
 
 function normalizeStoredVideoTitle(value) {
-  const title = String(value || "").trim() || "Untitled";
+  const title = collapseStoredLineBreaks(value || "").trim() || "Untitled";
   return title.slice(0, MAX_TITLE_LENGTH);
 }
 
 function normalizeStoredVideoTags(value) {
   const fittedTags = [];
   let fittedLength = 0;
+  const singleLineValue = Array.isArray(value)
+    ? value.map(collapseStoredLineBreaks)
+    : collapseStoredLineBreaks(value || "");
 
-  normalizeTags(value || "").forEach((tag) => {
+  normalizeTags(singleLineValue).forEach((tag) => {
     const separatorLength = fittedTags.length > 0 ? 2 : 0;
     const nextLength = fittedLength + separatorLength + tag.length;
     if (nextLength > MAX_TAGS_LENGTH) return;
@@ -397,4 +400,8 @@ function normalizeStoredVideoTags(value) {
   });
 
   return fittedTags;
+}
+
+function collapseStoredLineBreaks(value) {
+  return String(value).replace(/(?:[ \t]*[\r\n]+)+[ \t]*/g, " ");
 }

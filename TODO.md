@@ -26,18 +26,6 @@ check is completed or when browser behavior changes.
 - [ ] Run from both `file://` and `python3 -m http.server 8000`, close and reopen the
   page, and verify storage persistence or the expected parent-facing storage warning.
 
-## Focused Cleanup
-
-- [ ] Decide whether accepted input URLs must explicitly use `http:` or `https:`, then
-  enforce and test the decision. The current parser checks host and path and always
-  stores a canonical HTTPS watch URL.
-- [ ] Remove repeated TOML video normalization passes while preserving validation,
-  canonical URLs, deduplication, ordering, and the existing round-trip tests.
-
-Do not use these cleanup items as justification for ES modules, a framework, npm, a
-build pipeline, dependency injection, wholesale global-state untangling, or splitting
-`toml.js` without a concrete product requirement.
-
 ## Future PWA Verification
 
 Repeat is not currently a PWA. If manifest, service worker, or standalone-mode work is
