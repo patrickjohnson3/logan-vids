@@ -235,7 +235,8 @@ function escapeTomlString(value) {
 }
 
 function unescapeTomlString(value) {
-  if (/\\[^"\\]/.test(value)) {
+  const unsupportedEscapes = value.replace(/\\["\\]/g, "");
+  if (unsupportedEscapes.includes("\\")) {
     return { ok: false, value: "" };
   }
   return { ok: true, value: value.replace(/\\(["\\])/g, "$1") };

@@ -18,6 +18,28 @@ test("parseYouTubeUrl strips share and playlist params", () => {
   assert(result.canonicalUrl === "https://www.youtube.com/watch?v=AbCdEfGhI_j", "URL should be canonical");
 });
 
+test("parseYouTubeUrl rejects unsupported YouTube surfaces", () => {
+  const unsupportedUrls = [
+    "https://www.youtube.com/shorts/AbCdEfGhI_j",
+    "https://www.youtube.com/channel/example",
+    "https://www.youtube.com/playlist?list=example",
+    "https://www.youtube.com/live/AbCdEfGhI_j"
+  ];
+  unsupportedUrls.forEach((url) => {
+    assert(!parseYouTubeUrl(url).ok, `${url} should be rejected`);
+  });
+});
+
+test("buildEmbedUrl applies restricted player settings", () => {
+  const url = new URL(buildEmbedUrl("AbCdEfGhI_j", true, false));
+  assert(url.hostname === "www.youtube-nocookie.com", "embeds should use the privacy-enhanced host");
+  assert(url.searchParams.get("controls") === "0", "controls should be hidden");
+  assert(url.searchParams.get("disablekb") === "1", "keyboard controls should be disabled");
+  assert(url.searchParams.get("autoplay") === "1", "autoplay should be requested");
+  assert(url.searchParams.get("loop") === "1", "the approved video should loop");
+  assert(url.searchParams.get("playlist") === "AbCdEfGhI_j", "looping should target only the current video");
+});
+
 test("parseRepeatToml rejects invalid favorite values", () => {
   const result = parseRepeatToml([
     "[settings]",
@@ -45,19 +67,50 @@ test("parseRepeatToml rejects whitespace-only video titles", () => {
   assert(!result.ok, "whitespace-only titles should fail");
 });
 
-test("writeRepeatToml round trips tags", () => {
+test("writeRepeatToml round trips settings and video metadata", () => {
   const text = writeRepeatToml(normalizeState({
-    settings: {},
+    settings: {
+      youtubeControls: true,
+      theme: "light"
+    },
     videos: [{
       id: "AbCdEfGhI_j",
-      title: "Trains",
+      title: "Train \"Ride\" \\ Calm",
       tags: "trains, calm",
       youtubeUrl: "https://youtu.be/AbCdEfGhI_j",
       favorite: "true"
     }]
   }));
-  assert(text.includes('tags = "trains, calm"'), "tags should export");
-  assert(text.includes('favorite = "true"'), "favorite should export");
+  const result = parseRepeatToml(text);
+  assert(result.ok, result.message);
+  assert(result.state.settings.youtubeControls === true, "YouTube controls should round trip");
+  assert(result.state.settings.theme === "light", "theme should round trip");
+  assert(result.state.videos.length === 1, "one video should round trip");
+  assert(result.state.videos[0].title === "Train \"Ride\" \\ Calm", "escaped titles should round trip");
+  assert(tagsToString(result.state.videos[0].tags) === "trains, calm", "tags should round trip");
+  assert(result.state.videos[0].favorite === "true", "favorite state should round trip");
+});
+
+test("cancelled TOML import preserves current state", () => {
+  const previousState = state;
+  const previousConfirm = window.confirm;
+  try {
+    state = normalizeState({
+      settings: {},
+      videos: [{ id: "AbCdEfGhI_j", title: "Keep me" }]
+    });
+    const beforeImport = JSON.stringify(state);
+    window.confirm = () => false;
+
+    importToml("[settings]\n");
+
+    assert(JSON.stringify(state) === beforeImport, "cancelled import should not replace state");
+    assert(els.tomlMessage.textContent === MESSAGES.importCancelled, "cancelled import should be reported");
+  } finally {
+    window.confirm = previousConfirm;
+    state = previousState;
+    els.tomlMessage.textContent = "";
+  }
 });
 
 test("normalizeState drops malformed stored video IDs", () => {
@@ -229,6 +282,26 @@ test("findSimilarVideo skips favorites", () => {
       ]
     });
     assert(findSimilarVideo("AbCdEfGhI_j").id === "CbCdEfGhI_j", "favorite match should be skipped");
+  } finally {
+    state = previousState;
+  }
+});
+
+test("alphabetical Kid grid order does not change saved order", () => {
+  const previousState = state;
+  try {
+    state = normalizeState({
+      settings: { videoGridOrder: "alpha" },
+      videos: [
+        { id: "AbCdEfGhI_j", title: "Zebra" },
+        { id: "BbCdEfGhI_j", title: "Apple" }
+      ]
+    });
+
+    const sortedVideos = getKidGridVideos();
+
+    assert(sortedVideos[0].title === "Apple", "Kid grid should be alphabetical");
+    assert(getVideos()[0].title === "Zebra", "saved manual order should remain unchanged");
   } finally {
     state = previousState;
   }
