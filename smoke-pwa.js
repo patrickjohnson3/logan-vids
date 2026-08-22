@@ -225,6 +225,7 @@ function readyStateExpression(cacheName) {
       controller: Boolean(navigator.serviceWorker.controller),
       homeVisible: !document.getElementById("homeScreen")?.classList.contains("hidden"),
       marker: document.querySelector('meta[name="pwa-smoke-version"]')?.content || null,
+      scope: registration.scope,
       waitingState: registration.waiting?.state || null
     };
   })()`;
@@ -266,15 +267,17 @@ async function run() {
   const workerSource = fs.readFileSync(path.join(ROOT, "service-worker.js"), "utf8");
   const { cacheName, shellAssets } = parseServiceWorker(workerSource);
   const deploymentRoot = fs.mkdtempSync(path.join(os.tmpdir(), "repeat-pwa-deployment-"));
+  const applicationRoot = path.join(deploymentRoot, "logan-vids");
   const profileRoot = fs.mkdtempSync(path.join(os.tmpdir(), "repeat-pwa-profile-"));
   let chrome = null;
   let server = null;
   let chromeErrors = "";
 
   try {
-    copyDeployment(deploymentRoot, shellAssets);
-    createOldDeployment(deploymentRoot, cacheName);
+    copyDeployment(applicationRoot, shellAssets);
+    createOldDeployment(applicationRoot, cacheName);
     const startedServer = await startServer(deploymentRoot);
+    const applicationUrl = `${startedServer.origin}/logan-vids/`;
     server = startedServer.server;
 
     chrome = childProcess.spawn(findChrome(), [
@@ -297,15 +300,16 @@ async function run() {
     const { send } = createCdpConnection(chrome);
     await send("Browser.getVersion");
 
-    const oldPage = await createPage(send, `${startedServer.origin}/`);
+    const oldPage = await createPage(send, applicationUrl);
     const freshState = await evaluate(send, oldPage.sessionId, readyStateExpression(OLD_CACHE_NAME));
     assert.equal(freshState.controller, true, "Fresh installation did not control the page.");
     assert.equal(freshState.activeState, "activated", "Fresh worker did not activate.");
+    assert.equal(freshState.scope, applicationUrl, "Fresh worker scope did not match the deployment path.");
     assert.equal(freshState.marker, "old", "Fresh page did not use the old test shell.");
     assert.equal(freshState.cachedAssetCount, shellAssets.length, "Fresh cache is incomplete.");
     assert.deepEqual(freshState.cacheNames, [OLD_CACHE_NAME], "Fresh installation created unexpected caches.");
 
-    copyDeployment(deploymentRoot, shellAssets);
+    copyDeployment(applicationRoot, shellAssets);
     const waitingState = await evaluate(send, oldPage.sessionId, upgradeExpression());
     assert.equal(waitingState.activeState, "activated", "Old worker stopped during the open session.");
     assert.equal(waitingState.waitingState, "installed", "Updated worker did not wait for the old client.");
@@ -320,7 +324,7 @@ async function run() {
     await delay(750);
     await closeServer(server);
 
-    const currentPage = await createPage(send, `${startedServer.origin}/`);
+    const currentPage = await createPage(send, applicationUrl);
     const offlineState = await evaluate(send, currentPage.sessionId, readyStateExpression(cacheName));
     assert.equal(offlineState.controller, true, "Offline launch was not service-worker controlled.");
     assert.equal(offlineState.activeState, "activated", "Updated worker did not activate.");
@@ -330,7 +334,7 @@ async function run() {
     assert.deepEqual(offlineState.cacheNames, [cacheName], "Activation did not remove the old cache.");
 
     console.log(`PWA lifecycle smoke passed with cache revision ${cacheName}.`);
-    console.log("PASS fresh install and complete shell cache");
+    console.log("PASS fresh install and complete shell cache under /logan-vids/");
     console.log("PASS waiting update preserves the open client");
     console.log("PASS activation removes the old cache");
     console.log("PASS updated shell launches offline");
