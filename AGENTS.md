@@ -49,6 +49,12 @@ loads the same source files as the application, so no nested `AGENTS.md` is need
   operator documentation.
 - `validate-structure.js` checks required startup IDs in both HTML files and enforces
   their classic-script load order using Node built-ins only.
+- `manifest.webmanifest` and `icons/` own installation metadata and local PWA icon
+  assets. `service-worker.js` owns only the versioned local application-shell cache.
+- `validate-pwa.js` checks manifest fields, icon files and dimensions, service-worker
+  registration, and cached local shell assets using Node built-ins only.
+- `smoke-pwa.js` is the opt-in real-Chrome check for fresh service-worker installation,
+  versioned updates, cache cleanup, and offline shell launch.
 - `TODO.md` tracks concrete cleanup and target-device verification. Keep it scoped;
   architecture modernization is not an implicit TODO.
 
@@ -63,6 +69,8 @@ ID, update `getElements()` and the matching `tests.html` fixture together.
 - Supported use is direct opening of `index.html` or a simple static server, with
   Android Chrome as the primary target. Parent Mode remains non-fullscreen; entering
   Kid Mode requests fullscreen. Fullscreen rejection must remain non-fatal.
+- Direct `file://` use must remain functional, but service-worker registration is an
+  optional HTTPS/localhost capability and must never block normal startup.
 - Browser state lives only at `localStorage["repeat.runtimeState.v1"]`. Do not rename
   that key or change the state shape without a migration that preserves existing
   libraries, settings, ordering, tags, and favorites.
@@ -97,6 +105,9 @@ and the README example as applicable.
   players from `https://www.youtube-nocookie.com`. Keep the CSP aligned with those
   minimum origins and do not weaken `connect-src`, `object-src`, `base-uri`, or
   `form-action` to solve unrelated problems.
+- The service worker may intercept only its explicit same-origin application-shell
+  URL list. Do not cache or intercept YouTube thumbnails, embeds, video data,
+  arbitrary navigation, TOML blobs, or unrelated same-origin pages.
 - Preserve the iframe sandbox and minimal `allow` value in `player.js`. Do not grant
   fullscreen, popups, top navigation, clipboard, sharing, or Picture-in-Picture
   without an explicit product decision and corresponding documentation.
@@ -157,10 +168,24 @@ node --check render-kid.js
 node --check player.js
 node --check tests.js
 node --check validate-structure.js
+node --check service-worker.js
+node --check validate-pwa.js
+node --check smoke-pwa.js
 ```
 
 Run `node validate-structure.js` after changing required element IDs, `getElements()`,
 or script tags in either HTML file.
+
+Run `node validate-pwa.js` after changing `index.html`, the manifest, icons,
+service-worker registration, or cached shell assets. `CACHE_NAME` must use the shell
+digest required by the validator; when shell content changes, use the exact replacement
+name in its failure message. Do not add `skipWaiting()` or automatic reload behavior.
+The waiting worker is the deliberate session-safe update boundary.
+
+Run `node smoke-pwa.js` after changing PWA startup, shell contents, caching,
+installation, or update behavior. It requires local Chrome (or `CHROME_BIN`) and uses
+only temporary server/profile data. It protects the desktop service-worker lifecycle,
+not Android-specific behavior.
 
 Open `tests.html` directly or through the static server and require a green page with
 only `PASS` lines. Add or update tests when changing pure URL, state, migration, tag,
@@ -174,13 +199,16 @@ In particular:
 - test responsive landscape CSS in desktop Chrome as well as a coarse-pointer device;
 - test speech/autoplay changes with feedback both enabled and disabled;
 - test persistence/TOML changes with success, cancellation, malformed input, and
-  unavailable-storage paths; and
-- test any CSP, iframe, or URL change with a real approved video and thumbnail.
+  unavailable-storage paths;
+- test any CSP, iframe, or URL change with a real approved video and thumbnail; and
+- test PWA changes from localhost or HTTPS, including registration, activation,
+  offline shell launch, and the active items in `TODO.md`.
 
-The automated browser tests do not establish autoplay permission, audible speech,
-YouTube overlay/end-screen behavior, fullscreen reliability, or Android layout.
-Treat the matching checks in `TODO.md` as evidence that must come from the target
-device, not as facts implied by passing tests.
+The automated browser tests do not establish Android installability, standalone
+behavior, service-worker update timing on-device, autoplay permission, audible
+speech, YouTube overlay/end-screen behavior, fullscreen reliability, or Android
+layout. Treat the matching checks in `TODO.md` as evidence that must come from the
+target device, not as facts implied by passing tests.
 
 If a required browser/device check cannot be run, report that gap instead of treating
 syntax checks as full validation.

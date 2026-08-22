@@ -19,6 +19,27 @@ python3 -m http.server 8000
 Then open <http://127.0.0.1:8000>.
 
 For normal video playback and thumbnails, the device needs network access to YouTube.
+Opening `index.html` directly remains supported, but installation and offline shell
+launch require HTTPS or localhost so the service worker can run.
+
+## Install on Android
+
+Open the HTTPS live demo in Android Chrome, then use Chrome's **Install app** or
+**Add to Home screen** action. Launching the installed app opens Repeat in standalone
+mode without normal browser navigation controls.
+
+After one successful online load, Repeat caches only its local application shell.
+The interface and locally stored library can reopen offline, but thumbnails may be
+unavailable and YouTube videos are never cached. Selecting a video while offline
+continues to show Repeat's existing **No connection** Player state.
+
+Application-shell updates are versioned in `service-worker.js`. A newly deployed
+worker waits while an existing Repeat window is open, so a child-facing session is
+not reloaded. After all Repeat windows close, the new worker activates and removes
+older Repeat shell caches. `CACHE_NAME` ends with the first 12 hexadecimal characters
+of a SHA-256 digest over the ordered shell paths and file contents. After changing a
+cached shell asset, run `node validate-pwa.js` and set `CACHE_NAME` to the exact value
+reported by the validator.
 
 ## Parent workflow
 
@@ -105,6 +126,10 @@ Downloaded TOML reflects the current in-memory state. During normal operation th
 - `player.js`: player lifecycle and player controls
 - `tests.html` and `tests.js`: no-framework browser helper tests
 - `validate-structure.js`: required startup ID and classic-script order check
+- `manifest.webmanifest` and `icons/`: Android installation metadata and local icons
+- `service-worker.js`: versioned, same-origin application-shell cache
+- `validate-pwa.js`: manifest, icon, registration, and shell-cache validation
+- `smoke-pwa.js`: opt-in real-Chrome service-worker lifecycle check
 - `TODO.md`: focused cleanup and target-device verification backlog
 
 ## Script conventions
@@ -139,15 +164,33 @@ node --check render-kid.js
 node --check player.js
 node --check tests.js
 node --check validate-structure.js
+node --check service-worker.js
+node --check validate-pwa.js
+node --check smoke-pwa.js
 ```
 
 Validate the required production/test DOM IDs and classic-script order:
 
 ```bash
 node validate-structure.js
+node validate-pwa.js
 ```
 
 To run the no-framework browser helper tests, open `tests.html` directly in a browser or from the local static server. A passing run shows a green page with only `PASS` lines.
+
+After changing PWA startup, shell assets, caching, installation, or update behavior,
+run the opt-in real-service-worker smoke test:
+
+```bash
+node smoke-pwa.js
+```
+
+The command finds a local Chrome installation or uses `CHROME_BIN`, then creates a
+temporary server and browser profile. It verifies fresh installation, a waiting
+versioned update, activation after the old client closes, old-cache deletion, and an
+offline launch of the updated shell. It does not replace the Android checks in
+`TODO.md`. PWA runtime checks require localhost or HTTPS; they cannot run from
+`file://`.
 
 ## Manual browser checks
 
@@ -161,3 +204,4 @@ Automated browser tests do not prove audible autoplay, speech completion, YouTub
 6. Import a valid TOML file, cancel the replacement warning once, then confirm a second import replaces settings, videos, favorites, and tags.
 7. Import TOML with a duplicate key, invalid setting, invalid URL, invalid favorite value, overlong title, and overlong tags; each must show an error without changing saved data.
 8. Download and upload `safe-loop-config.toml`, then confirm the configuration round-trips correctly.
+9. Run the PWA checks in `TODO.md` on the target Android device before treating installed behavior as verified.

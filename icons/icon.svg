@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Repeat</title>
+  <rect width="512" height="512" fill="#111512"/>
+  <circle cx="256" cy="256" r="164" fill="#1b221e" stroke="#3a453e" stroke-width="12"/>
+  <path d="M154 230c12-62 67-108 133-108 40 0 76 17 101 43" fill="none" stroke="#92d6b2" stroke-width="32" stroke-linecap="round"/>
+  <path d="M387 126v58h-58" fill="none" stroke="#92d6b2" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M358 282c-12 62-67 108-133 108-40 0-76-17-101-43" fill="none" stroke="#92d6b2" stroke-width="32" stroke-linecap="round"/>
+  <path d="M125 386v-58h58" fill="none" stroke="#92d6b2" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M224 190v132l112-66z" fill="#f4f7f1"/>
+</svg>

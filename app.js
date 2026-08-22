@@ -83,6 +83,21 @@ function init() {
   applyTheme();
   bindEvents();
   showScreen(SCREEN.home);
+  registerServiceWorker();
+}
+
+function registerServiceWorker() {
+  if (IS_TEST_MODE || !("serviceWorker" in navigator) || window.location.protocol === "file:") return;
+
+  const register = () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  };
+
+  if (document.readyState === "complete") {
+    register();
+  } else {
+    window.addEventListener("load", register, { once: true });
+  }
 }
 
 function bindEvents() {
