@@ -152,7 +152,7 @@ and the README example as applicable.
 No setup or build is required. For HTTP testing, run:
 
 ```bash
-python3 -m http.server 8000
+python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
 Before considering a JavaScript change complete, run syntax checks for every script

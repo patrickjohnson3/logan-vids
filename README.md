@@ -13,7 +13,7 @@ The app is a static site: no framework, package manager, account, backend, cloud
 Open `index.html` directly in a browser, or serve the directory:
 
 ```bash
-python3 -m http.server 8000
+python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
 Then open <http://127.0.0.1:8000>.

@@ -23,8 +23,9 @@ check is completed or when browser behavior changes.
 - [ ] Observe real YouTube playback with controls both off and on, including metadata
   overlays, ads, the YouTube logo, looping, end-of-video behavior, and attempted links.
   Confirm that the child cannot navigate the top-level page into normal YouTube.
-- [ ] Run from both `file://` and `python3 -m http.server 8000`, close and reopen the
-  page, and verify storage persistence or the expected parent-facing storage warning.
+- [ ] Run from both `file://` and
+  `python3 -m http.server 8000 --bind 127.0.0.1`, close and reopen the page, and verify
+  storage persistence or the expected parent-facing storage warning.
 
 ## Installed PWA Verification
 
