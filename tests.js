@@ -210,6 +210,13 @@ function withControlledPlayerPlayback(run) {
   }
 }
 
+test("test fixture blocks external network access", () => {
+  const policy = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || "";
+  assert(policy.includes("connect-src 'none'"), "tests should block external connections");
+  assert(policy.includes("frame-src 'none'"), "tests should block remote player navigation");
+  assert(policy.includes("img-src data:"), "tests should allow only inline test images");
+});
+
 test("parseYouTubeUrl strips share and playlist params", () => {
   const result = parseYouTubeUrl("https://youtu.be/AbCdEfGhI_j?si=track&list=ignored");
   assert(result.ok, result.message);
