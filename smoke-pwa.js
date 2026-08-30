@@ -189,8 +189,15 @@ async function createPage(send, url) {
   await send("Page.enable", {}, sessionId);
   const navigation = await send("Page.navigate", { url }, sessionId);
   if (navigation.errorText) throw new Error(`Chrome could not navigate to ${url}: ${navigation.errorText}`);
-  await delay(500);
-  return { sessionId, targetId };
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const frameTree = await send("Page.getFrameTree", {}, sessionId);
+    if (frameTree.frameTree.frame.url === url) {
+      const ready = await evaluate(send, sessionId, "document.readyState === 'complete'");
+      if (ready) return { sessionId, targetId };
+    }
+    await delay(100);
+  }
+  throw new Error(`Chrome did not finish loading ${url}.`);
 }
 
 async function evaluate(send, sessionId, expression) {
@@ -254,6 +261,31 @@ function upgradeExpression() {
       marker: document.querySelector('meta[name="pwa-smoke-version"]')?.content || null,
       waitingState: registration.waiting?.state || null
     };
+  })()`;
+}
+
+function activatedUpdateExpression(cacheName, oldCacheName, applicationUrl) {
+  return `(async () => {
+    let state = null;
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const registration = await navigator.serviceWorker.getRegistration(${JSON.stringify(applicationUrl)});
+      const cacheNames = await caches.keys();
+      state = {
+        activeState: registration?.active?.state || null,
+        cacheNames,
+        waitingState: registration?.waiting?.state || null
+      };
+      if (
+        state.activeState === "activated" &&
+        state.waitingState === null &&
+        cacheNames.includes(${JSON.stringify(cacheName)}) &&
+        !cacheNames.includes(${JSON.stringify(oldCacheName)})
+      ) {
+        return state;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return state;
   })()`;
 }
 
@@ -347,7 +379,16 @@ async function run() {
     );
 
     await send("Target.closeTarget", { targetId: oldPage.targetId });
-    await delay(750);
+    const activationProbe = await createPage(send, `${startedServer.origin}/activation-probe`);
+    const activatedState = await evaluate(
+      send,
+      activationProbe.sessionId,
+      activatedUpdateExpression(cacheName, OLD_CACHE_NAME, applicationUrl),
+    );
+    assert.equal(activatedState.activeState, "activated", "Updated worker did not activate.");
+    assert.equal(activatedState.waitingState, null, "Updated worker remained waiting.");
+    assert.deepEqual(activatedState.cacheNames, [cacheName], "Activation did not remove the old cache.");
+    await send("Target.closeTarget", { targetId: activationProbe.targetId });
     await closeServer(server);
 
     const currentPage = await createPage(send, applicationUrl);
@@ -357,7 +398,7 @@ async function run() {
     assert.equal(offlineState.marker, null, "Offline launch used the stale shell.");
     assert.equal(offlineState.homeVisible, true, "Offline shell did not render Home.");
     assert.equal(offlineState.cachedAssetCount, shellAssets.length, "Updated cache is incomplete.");
-    assert.deepEqual(offlineState.cacheNames, [cacheName], "Activation did not remove the old cache.");
+    assert.deepEqual(offlineState.cacheNames, [cacheName], "Offline launch found an unexpected cache.");
 
     console.log(`PWA lifecycle smoke passed with cache revision ${cacheName}.`);
     console.log("PASS Chrome discovers an installable manifest");
