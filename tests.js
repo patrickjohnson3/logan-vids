@@ -1119,6 +1119,40 @@ test("successful Parent unlock focuses the Parent heading", () => {
   }
 });
 
+test("Kid favorites render separately and hide when empty", () => {
+  const previousState = state;
+  try {
+    state = normalizeState({
+      settings: {},
+      videos: [
+        { id: "AbCdEfGhI_j", title: "Favorite trains", favorite: "true" },
+        { id: "BbCdEfGhI_j", title: "Music" }
+      ]
+    });
+    renderKid();
+
+    const favoriteTile = els.favoritesRow.querySelector(".video-tile");
+    const approvedTile = els.kidVideoGrid.querySelector(".video-tile");
+    assert(!els.favoritesSection.hidden, "Favorites should be visible when a favorite exists");
+    assert(els.favoritesRow.children.length === 1, "the favorite should appear once in the Favorites row");
+    assert(favoriteTile.dataset.videoId === "AbCdEfGhI_j", "the favorite should appear in the Favorites row");
+    assert(favoriteTile.getAttribute("aria-label") === "Favorite trains, favorite", "the favorite tile should expose its state");
+    assert(favoriteTile.querySelector(".favorite-badge"), "the favorite tile should include its visible badge");
+    assert(els.kidVideoGrid.children.length === 1, "the main grid should exclude favorites");
+    assert(approvedTile.dataset.videoId === "BbCdEfGhI_j", "the main grid should retain non-favorites");
+
+    state.videos[0].favorite = "false";
+    renderKid();
+
+    assert(els.favoritesSection.hidden, "Favorites should hide when no favorites remain");
+    assert(els.favoritesRow.children.length === 0, "the hidden Favorites row should be empty");
+    assert(els.kidVideoGrid.children.length === 2, "former favorites should return to the main grid");
+  } finally {
+    state = previousState;
+    renderKid();
+  }
+});
+
 test("Kid video content precedes Parent entry in sequential DOM order", () => {
   const previousState = state;
   try {
