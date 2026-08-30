@@ -18,6 +18,11 @@ python3 -m http.server 8000 --bind 127.0.0.1
 
 Then open <http://127.0.0.1:8000>.
 
+For development checks that open the production app from localhost, use a disposable
+Chrome profile. Repeat writes `localStorage` and registers a service worker for that
+origin; deleting the disposable profile prevents test state and cached shell files
+from affecting an existing library or a later project that reuses the same port.
+
 For normal video playback and thumbnails, the device needs network access to YouTube.
 Opening `index.html` directly remains supported, but installation and offline shell
 launch require HTTPS or localhost so the service worker can run.
@@ -196,6 +201,11 @@ HTTPS; they cannot run from `file://`.
 ## Manual browser checks
 
 Automated browser tests do not prove audible autoplay, speech completion, YouTube iframe behavior, fullscreen, or responsive layout. Before sharing a build, verify these flows in Android Chrome on the target device and record significant device-specific results in `TODO.md`:
+
+Use a disposable browser profile for desktop checks. Before testing on an existing
+Android installation, download a TOML backup, use a clearly disposable test library,
+and restore the original configuration afterward. Do not run replacement imports or
+destructive actions against the child's live library merely for validation.
 
 1. Open `tests.html` and confirm all helper tests pass.
 2. Enter Kid Mode and confirm fullscreen starts; open Parent Mode and confirm fullscreen exits.

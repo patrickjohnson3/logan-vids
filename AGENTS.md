@@ -155,6 +155,11 @@ No setup or build is required. For HTTP testing, run:
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
+Opening production `index.html` from localhost writes `localStorage` and installs a
+service worker for that origin. Use a disposable browser profile for development and
+PWA validation so test state and cached shell files cannot affect an existing library
+or another project that later reuses the port.
+
 Before considering a JavaScript change complete, run syntax checks for every script
 changed. For repository-wide or cross-file changes, run the complete set:
 
@@ -194,6 +199,10 @@ similar-video, or TOML behavior. Keep `window.REPEAT_TEST_MODE` behavior free of
 `localStorage` writes.
 
 Run the relevant flows in README's **Manual browser checks** after user-visible work.
+Before target-device validation, download a TOML backup and use a disposable test
+library. Restore the original configuration afterward; do not use the child's live
+library for destructive validation.
+
 In particular:
 
 - test Kid Mode and player changes in Android Chrome portrait and landscape;

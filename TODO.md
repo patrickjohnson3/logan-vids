@@ -9,6 +9,10 @@ These checks matter more than internal cleanup for Kid Mode reliability. Record 
 device model, Android version, Chrome version, launch mode, date, and result when a
 check is completed or when browser behavior changes.
 
+Before testing on an existing installation, download a TOML backup and use a
+disposable test library. Restore the original configuration afterward. Do not run
+replacement imports or destructive checks against the child's live library.
+
 - [ ] On a fresh Chrome profile with YouTube controls off, verify that a tile starts
   playback after speech with audio feedback both on and off.
 - [ ] Verify normal speech completion and the timeout fallback with short and
