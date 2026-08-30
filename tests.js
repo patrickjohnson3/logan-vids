@@ -987,6 +987,52 @@ test("deleting the final video focuses the Saved videos heading", () => {
   }
 });
 
+test("cancelled deletion preserves the video library", () => {
+  const previousConfirm = window.confirm;
+  window.confirm = () => false;
+  try {
+    withParentVideoState([
+      { id: "AbCdEfGhI_j", title: "Keep me" },
+      { id: "BbCdEfGhI_j", title: "Also keep me" }
+    ], () => {
+      getParentActionForTest("AbCdEfGhI_j", "delete").click();
+
+      assert(getVideoCount() === 2, "cancelled deletion should preserve every video");
+      assert(videoExists("AbCdEfGhI_j"), "cancelled deletion should preserve the selected video");
+      assert(els.savedVideosMessage.textContent === MESSAGES.deleteVideoCancelled, "cancelled deletion should be reported");
+    });
+  } finally {
+    window.confirm = previousConfirm;
+  }
+});
+
+test("Clear all requires the exact confirmation and reports the result", () => {
+  const previousPrompt = window.prompt;
+  let promptResult = "clear";
+  window.prompt = () => promptResult;
+  try {
+    withParentVideoState([
+      { id: "AbCdEfGhI_j", title: "One" },
+      { id: "BbCdEfGhI_j", title: "Two" }
+    ], () => {
+      clearAllVideos();
+
+      assert(getVideoCount() === 2, "an inexact confirmation should preserve the library");
+      assert(els.savedVideosMessage.textContent === MESSAGES.clearAllCancelled, "an inexact confirmation should be reported");
+
+      promptResult = "CLEAR";
+      clearAllVideos();
+
+      assert(getVideoCount() === 0, "the exact confirmation should clear the library");
+      assert(els.parentVideoList.children.length === 0, "the Parent list should update after clearing");
+      assert(!els.emptyParentMessage.hidden, "the empty Parent state should appear after clearing");
+      assert(els.savedVideosMessage.textContent === MESSAGES.allVideosCleared, "successful clearing should be reported");
+    });
+  } finally {
+    window.prompt = previousPrompt;
+  }
+});
+
 test("Add Video custom validation focuses and describes the invalid field", () => {
   withParentVideoState([], () => {
     els.videoTitle.value = "   ";
