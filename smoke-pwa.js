@@ -110,19 +110,21 @@ function startServer(root) {
 }
 
 function findChrome() {
+  if (process.env.CHROME_BIN) {
+    if (!fs.existsSync(process.env.CHROME_BIN)) {
+      throw new Error(`CHROME_BIN does not exist: ${process.env.CHROME_BIN}`);
+    }
+    return process.env.CHROME_BIN;
+  }
+
   const candidates = [
-    process.env.CHROME_BIN,
     "/usr/bin/google-chrome",
     "/usr/bin/google-chrome-stable",
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-  ].filter(Boolean);
-  const chrome = candidates.find((candidate) => fs.existsSync(candidate));
-  if (!chrome) {
-    throw new Error("Chrome was not found. Set CHROME_BIN to the Chrome executable.");
-  }
-  return chrome;
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || "";
 }
 
 function createCdpConnection(chrome) {
@@ -306,6 +308,12 @@ async function stopChrome(chrome) {
 }
 
 async function run() {
+  const chromePath = findChrome();
+  if (!chromePath) {
+    console.log("SKIP PWA lifecycle smoke: Chrome was not found. Set CHROME_BIN to run it.");
+    return;
+  }
+
   const workerSource = fs.readFileSync(path.join(ROOT, "service-worker.js"), "utf8");
   const { cacheName, shellAssets } = parseServiceWorker(workerSource);
   const deploymentRoot = fs.mkdtempSync(path.join(os.tmpdir(), "repeat-pwa-deployment-"));
@@ -322,7 +330,7 @@ async function run() {
     const applicationUrl = `${startedServer.origin}/logan-vids/`;
     server = startedServer.server;
 
-    chrome = childProcess.spawn(findChrome(), [
+    chrome = childProcess.spawn(chromePath, [
       "--headless=new",
       "--no-sandbox",
       "--disable-background-networking",

@@ -198,6 +198,11 @@ client closes, old-cache deletion, and an offline launch of the updated shell. I
 not replace the Android checks in `TODO.md`. PWA runtime checks require localhost or
 HTTPS; they cannot run from `file://`.
 
+If Chrome cannot be discovered and `CHROME_BIN` is unset, the optional smoke test
+prints `SKIP` and exits without creating test state. Treat that result as an
+unverified PWA check, not as a pass. An explicitly configured invalid `CHROME_BIN`
+remains an error.
+
 ## Manual browser checks
 
 Automated browser tests do not prove audible autoplay, speech completion, YouTube iframe behavior, fullscreen, or responsive layout. Before sharing a build, verify these flows in Android Chrome on the target device and record significant device-specific results in `TODO.md`:

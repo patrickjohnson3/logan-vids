@@ -189,9 +189,11 @@ name in its failure message. Do not add `skipWaiting()` or automatic reload beha
 The waiting worker is the deliberate session-safe update boundary.
 
 Run `node smoke-pwa.js` after changing PWA startup, shell contents, caching,
-installation, or update behavior. It requires local Chrome (or `CHROME_BIN`) and uses
-only temporary server/profile data. It protects the desktop service-worker lifecycle,
-not Android-specific behavior.
+installation, or update behavior. It uses local Chrome (or `CHROME_BIN`) and only
+temporary server/profile data. Missing automatically discovered Chrome produces a
+clean `SKIP`; report that validation gap. An invalid explicit `CHROME_BIN` is an error.
+The smoke test protects the desktop service-worker lifecycle, not Android-specific
+behavior.
 
 Open `tests.html` directly or through the static server and require a green page with
 only `PASS` lines. Add or update tests when changing pure URL, state, migration, tag,
