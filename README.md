@@ -187,10 +187,11 @@ node smoke-pwa.js
 
 The command finds a local Chrome installation or uses `CHROME_BIN`, then creates a
 temporary server and browser profile under the production-style `/logan-vids/` path.
-It verifies fresh installation and scope, a waiting versioned update, activation
-after the old client closes, old-cache deletion, and an offline launch of the updated
-shell. It does not replace the Android checks in `TODO.md`. PWA runtime checks require
-localhost or HTTPS; they cannot run from `file://`.
+It verifies Chrome manifest discovery and installability diagnostics, fresh service
+worker installation and scope, a waiting versioned update, activation after the old
+client closes, old-cache deletion, and an offline launch of the updated shell. It does
+not replace the Android checks in `TODO.md`. PWA runtime checks require localhost or
+HTTPS; they cannot run from `file://`.
 
 ## Manual browser checks
 

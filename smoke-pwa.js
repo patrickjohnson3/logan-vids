@@ -207,6 +207,16 @@ async function evaluate(send, sessionId, expression) {
   return result.result.value;
 }
 
+async function getInstallabilityState(send, sessionId) {
+  const manifest = await send("Page.getAppManifest", {}, sessionId);
+  const installability = await send("Page.getInstallabilityErrors", {}, sessionId);
+  return {
+    installabilityErrors: installability.installabilityErrors || [],
+    manifestErrors: manifest.errors || [],
+    manifestUrl: manifest.url || ""
+  };
+}
+
 function readyStateExpression(cacheName) {
   return `(async () => {
     const registration = await Promise.race([
@@ -302,12 +312,28 @@ async function run() {
 
     const oldPage = await createPage(send, applicationUrl);
     const freshState = await evaluate(send, oldPage.sessionId, readyStateExpression(OLD_CACHE_NAME));
+    const installabilityState = await getInstallabilityState(send, oldPage.sessionId);
     assert.equal(freshState.controller, true, "Fresh installation did not control the page.");
     assert.equal(freshState.activeState, "activated", "Fresh worker did not activate.");
     assert.equal(freshState.scope, applicationUrl, "Fresh worker scope did not match the deployment path.");
     assert.equal(freshState.marker, "old", "Fresh page did not use the old test shell.");
     assert.equal(freshState.cachedAssetCount, shellAssets.length, "Fresh cache is incomplete.");
     assert.deepEqual(freshState.cacheNames, [OLD_CACHE_NAME], "Fresh installation created unexpected caches.");
+    assert.equal(
+      installabilityState.manifestUrl,
+      `${applicationUrl}manifest.webmanifest`,
+      "Chrome did not discover the deployed manifest.",
+    );
+    assert.deepEqual(
+      installabilityState.manifestErrors,
+      [],
+      `Chrome reported manifest errors: ${JSON.stringify(installabilityState.manifestErrors)}`,
+    );
+    assert.deepEqual(
+      installabilityState.installabilityErrors,
+      [],
+      `Chrome reported installability errors: ${JSON.stringify(installabilityState.installabilityErrors)}`,
+    );
 
     copyDeployment(applicationRoot, shellAssets);
     const waitingState = await evaluate(send, oldPage.sessionId, upgradeExpression());
@@ -334,6 +360,7 @@ async function run() {
     assert.deepEqual(offlineState.cacheNames, [cacheName], "Activation did not remove the old cache.");
 
     console.log(`PWA lifecycle smoke passed with cache revision ${cacheName}.`);
+    console.log("PASS Chrome discovers an installable manifest");
     console.log("PASS fresh install and complete shell cache under /logan-vids/");
     console.log("PASS waiting update preserves the open client");
     console.log("PASS activation removes the old cache");

@@ -53,8 +53,9 @@ loads the same source files as the application, so no nested `AGENTS.md` is need
   assets. `service-worker.js` owns only the versioned local application-shell cache.
 - `validate-pwa.js` checks manifest fields, icon files and dimensions, service-worker
   registration, and cached local shell assets using Node built-ins only.
-- `smoke-pwa.js` is the opt-in real-Chrome check for fresh service-worker installation,
-  versioned updates, cache cleanup, and offline shell launch.
+- `smoke-pwa.js` is the opt-in real-Chrome check for manifest installability, fresh
+  service-worker installation, versioned updates, cache cleanup, and offline shell
+  launch.
 - `TODO.md` tracks concrete cleanup and target-device verification. Keep it scoped;
   architecture modernization is not an implicit TODO.
 
