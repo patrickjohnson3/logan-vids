@@ -481,10 +481,9 @@ select {
   justify-self: start;
   place-items: center;
   padding: 0;
-  border-color: var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
   background: var(--surface);
-  box-shadow: 0 1px 4px var(--shadow);
   font-size: 1.35rem;
 }
 
@@ -497,8 +496,8 @@ select {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border: 2px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
   overflow: hidden;
   background: #000;
 }
@@ -564,7 +563,9 @@ select {
   place-items: center;
   align-content: center;
   gap: 8px;
-  border-radius: 8px;
+  padding: 12px;
+  border-width: 1px;
+  border-radius: 14px;
   font-size: 2rem;
   transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
 }
@@ -573,6 +574,10 @@ select {
   transform: scale(0.97);
   background: var(--surface);
   box-shadow: inset 0 3px 8px var(--shadow);
+}
+
+#againButton:not(:active):not(:disabled) {
+  background: color-mix(in srgb, var(--surface-2) 82%, var(--accent));
 }
 
 .player-button:disabled {

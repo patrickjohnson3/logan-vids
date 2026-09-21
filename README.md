@@ -96,6 +96,8 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
   video and playback actions together. Enlarged text reduces that extra space.
 - Player controls use matching local icons. The favorite heart changes from an
   outline to a filled heart when selected.
+- Player controls keep large touch targets with softer outlines and corners.
+  Again has a muted sage background in both themes.
 
 ## YouTube URLs
 
