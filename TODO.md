@@ -49,6 +49,8 @@ not prove behavior on Logan's Android device.
   YouTube iframe.
 - [ ] Restore connectivity, press Again, and confirm normal title speech and video
   playback resume without reopening the app.
+- [ ] Lose connectivity during playback and during title speech. Confirm the iframe
+  is removed, No connection appears, and reconnecting waits for Again.
 - [ ] In standalone mode, verify speech/autoplay timing, Kid Mode fullscreen and
   Parent Mode exit, Android Back, portrait/landscape rotation, and background/resume.
 - [ ] Verify Kid and Parent flows with TalkBack and Switch Access, including focus

@@ -1811,6 +1811,36 @@ test("init wires the major Kid, Player, and Parent flows", () => {
       controls.fireAllTimers();
       assert(!els.playerFrameWrap.querySelector("iframe"), "late speech completion must stay cancelled");
     });
+
+    withControlledPlayerPlayback((controls) => {
+      openPlayer("AbCdEfGhI_j");
+      controls.completeSpeech(0);
+      assert(els.playerFrameWrap.querySelector("iframe"), "playback should start before the connection drops");
+      controls.setBrowserOnline(false);
+      window.dispatchEvent(new Event("offline"));
+      assert(!els.playerFrameWrap.querySelector("iframe"), "offline event should remove the active iframe");
+      const message = els.playerFrameWrap.querySelector(".player-offline-message");
+      assert(message, "connection loss should show Repeat's offline state");
+      window.dispatchEvent(new Event("offline"));
+      assert(els.playerFrameWrap.querySelector(".player-offline-message") === message, "repeated events should keep the same status");
+      controls.setBrowserOnline(true);
+      window.dispatchEvent(new Event("online"));
+      assert(!els.playerFrameWrap.querySelector("iframe"), "reconnection must not autoplay");
+      playCurrentAgain();
+      controls.setBrowserOnline(false);
+      window.dispatchEvent(new Event("offline"));
+      controls.setBrowserOnline(true);
+      controls.completeSpeech(1);
+      controls.fireAllTimers();
+      assert(!els.playerFrameWrap.querySelector("iframe"), "offline during speech must cancel stale startup after reconnect");
+      playCurrentAgain();
+      controls.completeSpeech(2);
+      assert(controls.getPlayerStartCount() === 2, "explicit Again should recover once after reconnection");
+      returnToKidMode();
+      window.dispatchEvent(new Event("offline"));
+      assert(screens[SCREEN.kid].classList.contains("active"), "offline must not navigate away from Kid Mode");
+      assert(els.playerFrameWrap.children.length === 0, "offline outside Player must leave it empty");
+    });
   } finally {
     invalidatePendingPlayerStart();
     els.playerFrameWrap.innerHTML = "";

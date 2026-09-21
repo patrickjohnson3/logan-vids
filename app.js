@@ -109,6 +109,7 @@ function registerServiceWorker() {
 function bindEvents() {
   window.addEventListener("popstate", restoreScreenHistory);
   window.addEventListener("pagehide", pausePendingPlayerStart);
+  window.addEventListener("offline", handlePlayerOffline);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pausePendingPlayerStart();
   });

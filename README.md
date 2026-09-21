@@ -82,7 +82,9 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - **Similar** selects the next saved video with at least one matching parent tag, then speaks its title before playback.
 - Favorites remain at the top of Kid Mode in their saved order and do not repeat in the video grid.
 - Every approved video is configured to loop, avoiding YouTube end-screen recommendations.
-- If the browser reports no connection, the player keeps the selected thumbnail and leaves **Home** and **Again** available without opening YouTube.
+- If the browser reports no connection, including during playback or title speech,
+  the player removes the iframe, keeps the selected thumbnail, and leaves **Home**
+  and **Again** available. Restoring connectivity does not autoplay; press **Again**.
 - Enlarged text can reflow the player buttons into fewer columns. Status messages
   expand to remain readable; very small windows can scroll to reach every control.
 
@@ -97,6 +99,11 @@ The app locally rejects channels, playlist-only URLs, Shorts, and recognized liv
 Accepted HTTP and HTTPS input URLs are saved as clean canonical HTTPS watch URLs, so tracking parameters such as `si=...` and appended playlist parameters are stripped.
 
 The player iframe is sandboxed and has no fullscreen, sharing, clipboard, Picture-in-Picture, popup, or top-level-navigation permission. This reduces exposure to YouTube, but it cannot turn a remote YouTube embed into a complete kiosk. Use Android app pinning or kiosk controls when stricter device-level containment is required.
+
+The browser's connection signal does not prove that YouTube is reachable or that a
+video can play. While that signal remains online, blocked requests and remote video
+errors remain inside the embed; Repeat cannot reliably detect them through the
+current sandboxed player integration. **Home** and **Again** remain available.
 
 ## Data and TOML
 

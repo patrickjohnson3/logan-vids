@@ -183,6 +183,15 @@ function renderPlayerPreparing(video) {
   els.playerFrameWrap.append(thumbnail, status);
 }
 
+function handlePlayerOffline() {
+  if (!screens[SCREEN.player].classList.contains("active")) return;
+  const video = findVideo(currentVideoId);
+  if (!video) return;
+  invalidatePendingPlayerStart();
+  stopSpeech();
+  renderPlayerOffline(video);
+}
+
 function renderPlayerOffline(video) {
   playerPreparationPending = false;
   els.playerTitle.textContent = video.title;
