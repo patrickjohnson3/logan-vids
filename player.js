@@ -7,7 +7,7 @@ let pendingPlayerStartTimeoutId = null;
 let playerPreparationPending = false;
 let playerOriginVideoId = null;
 
-function openPlayer(id) {
+function openPlayer(id, autoplay = true) {
   const video = findVideo(id);
   if (!video) return;
 
@@ -19,7 +19,12 @@ function openPlayer(id) {
   focusWithoutScrolling(els.playerTitle);
 
   // Wait for the tile label before starting the video, so the two audio cues do not compete.
-  startPlayerAfterSpeech(video.title, video.id);
+  if (autoplay) {
+    startPlayerAfterSpeech(video.title, video.id);
+  } else {
+    els.playerFrameWrap.setAttribute("aria-busy", "false");
+    els.playerFrameWrap.querySelector(".player-preparing-status").textContent = "Press Again to play.";
+  }
 }
 
 function startCurrentPlayer(autoplay) {
@@ -92,6 +97,7 @@ function playSimilarVideo() {
   if (!nextVideo) return;
 
   currentVideoId = nextVideo.id;
+  recordScreenHistory(SCREEN.player);
   renderPlayerControls(nextVideo);
   renderPlayerPreparing(nextVideo);
   startPlayerAfterSpeech(nextVideo.title, nextVideo.id);

@@ -1185,6 +1185,130 @@ test("Kid video content precedes Parent entry in sequential DOM order", () => {
   }
 });
 
+function withScreenHistoryForTest(run) {
+  const previous = {
+    session: navigationSession, trail: navigationTrail, index: navigationIndex,
+    returnIndex: navigationReturnIndex, restoring: restoringNavigation,
+    push: history.pushState, replace: history.replaceState, go: history.go
+  };
+  const entries = [];
+  let position = 0;
+  let pendingPosition = null;
+  history.replaceState = (entry) => { entries[position] = entry; };
+  history.pushState = (entry) => {
+    entries.splice(position + 1);
+    entries.push(entry);
+    position += 1;
+  };
+  history.go = (distance) => { pendingPosition = position + distance; };
+  const flush = () => {
+    assert(pendingPosition !== null, "a history traversal should be pending");
+    position = pendingPosition;
+    pendingPosition = null;
+    restoreScreenHistory({ state: entries[position] });
+  };
+  navigationSession = "";
+  showScreen(SCREEN.home);
+  initializeScreenHistory();
+  try {
+    run({
+      flush,
+      back() { history.go(-1); flush(); },
+      forward() { history.go(1); flush(); },
+      count() { return entries.length; }
+    });
+  } finally {
+    navigationSession = previous.session;
+    navigationTrail = previous.trail;
+    navigationIndex = previous.index;
+    navigationReturnIndex = previous.returnIndex;
+    restoringNavigation = previous.restoring;
+    history.pushState = previous.push;
+    history.replaceState = previous.replace;
+    history.go = previous.go;
+  }
+}
+
+test("Back cancels Player and Forward requires an explicit retry", () => {
+  withControlledPlayerPlayback((controls) => {
+    withScreenHistoryForTest((navigation) => {
+      showScreen(SCREEN.kid);
+      openPlayer("AbCdEfGhI_j");
+      navigation.back();
+      controls.completeSpeech(0);
+      controls.fireAllTimers();
+      assert(screens[SCREEN.kid].classList.contains("active"), "Back should return to Kid Mode");
+      assert(document.activeElement.dataset.videoId === "AbCdEfGhI_j", "Back should focus the originating tile");
+      assert(!els.playerFrameWrap.querySelector("iframe"), "Back should prevent stale playback");
+      navigation.forward();
+      assert(screens[SCREEN.player].classList.contains("active"), "Forward should restore the selection");
+      assert(currentVideoId === "AbCdEfGhI_j", "Forward should retain the selected video");
+      assert(!els.playerFrameWrap.querySelector("iframe"), "Forward must not autoplay");
+      assert(els.playerFrameWrap.textContent.includes("Again"), "Forward should explain how to resume");
+      navigation.back();
+      navigation.back();
+      assert(screens[SCREEN.home].classList.contains("active"), "Back should reach the opening screen");
+    });
+  });
+});
+
+test("explicit Player Home consumes history even when another tile is tapped immediately", () => {
+  withControlledPlayerPlayback(() => {
+    withScreenHistoryForTest((navigation) => {
+      showScreen(SCREEN.kid);
+      openPlayer("AbCdEfGhI_j");
+      returnToKidMode();
+      openPlayer("BbCdEfGhI_j");
+      navigation.flush();
+      assert(currentVideoId === "BbCdEfGhI_j", "a late return must not clear the new selection");
+      assert(navigation.count() === 3, "repeated playback should reuse the forward branch");
+      navigation.back();
+      assert(screens[SCREEN.kid].classList.contains("active"), "Back should return to Kid Mode once");
+      navigation.back();
+      assert(screens[SCREEN.home].classList.contains("active"), "there should be no duplicate Kid stops");
+    });
+  });
+});
+
+test("history retains Similar selection and skips removed videos", () => {
+  withControlledPlayerPlayback(() => {
+    withScreenHistoryForTest((navigation) => {
+      showScreen(SCREEN.kid);
+      openPlayer("AbCdEfGhI_j");
+      playSimilarVideo();
+      navigation.back();
+      navigation.forward();
+      assert(currentVideoId === "BbCdEfGhI_j", "Forward should restore the last Similar selection");
+      navigation.back();
+      state.videos = state.videos.filter((video) => video.id !== "BbCdEfGhI_j");
+      navigation.forward();
+      navigation.flush();
+      assert(screens[SCREEN.kid].classList.contains("active"), "a removed video should return to Kid Mode");
+      openPlayer("AbCdEfGhI_j");
+      navigation.back();
+      navigation.back();
+      assert(screens[SCREEN.home].classList.contains("active"), "removed history must not leave duplicate Kid stops");
+    });
+  });
+});
+
+test("history never restores Parent authorization", () => {
+  withScreenHistoryForTest((navigation) => {
+    openParentUnlock(SCREEN.home);
+    els.unlockCode.value = state.settings.unlockCode;
+    handleParentUnlock({ preventDefault() {} });
+    assert(screens[SCREEN.parent].classList.contains("active"), "valid code should unlock Parent Mode");
+    assert(navigation.count() === 2, "unlock success should replace the prompt destination");
+    navigation.back();
+    navigation.forward();
+    assert(screens[SCREEN.unlock].classList.contains("active"), "Forward should require the code again");
+    assert(els.unlockCode.value === "", "history must clear the entered code");
+    closeParentUnlock();
+    navigation.flush();
+    assert(screens[SCREEN.home].classList.contains("active"), "Cancel should return to the opening screen");
+  });
+});
+
 test("player waits for startup speech and replaces Preparing with one iframe", () => {
   withControlledPlayerPlayback((controls) => {
     openPlayer("AbCdEfGhI_j");

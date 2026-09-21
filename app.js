@@ -4,6 +4,11 @@ let state = loadState();
 let currentVideoId = null;
 let unlockReturnScreen = SCREEN.home;
 let editingVideoId = null;
+let navigationSession = "";
+let navigationTrail = [];
+let navigationIndex = 0;
+let navigationReturnIndex = null;
+let restoringNavigation = false;
 
 const screens = getScreens();
 const els = getElements();
@@ -83,6 +88,7 @@ function init() {
   applyTheme();
   bindEvents();
   showScreen(SCREEN.home);
+  if (!IS_TEST_MODE) initializeScreenHistory();
   registerServiceWorker();
 }
 
@@ -101,6 +107,7 @@ function registerServiceWorker() {
 }
 
 function bindEvents() {
+  window.addEventListener("popstate", restoreScreenHistory);
   els.kidModeButton.addEventListener("click", enterKidMode);
 
   els.parentModeButton.addEventListener("click", () => openParentUnlock(SCREEN.home));
@@ -166,6 +173,7 @@ function handleParentUnlock(event) {
 }
 
 function showScreen(name) {
+  recordScreenHistory(name);
   if (name === SCREEN.home || name === SCREEN.parent) {
     exitKidFullscreen();
   }
@@ -174,6 +182,90 @@ function showScreen(name) {
   screens[name].classList.add("active");
   if (name === SCREEN.parent) renderParent();
   if (name === SCREEN.kid) renderKid();
+}
+
+function initializeScreenHistory() {
+  navigationSession = `${Date.now()}-${Math.random()}`;
+  navigationTrail = [{ screen: SCREEN.home }];
+  navigationIndex = 0;
+  navigationReturnIndex = null;
+  try {
+    history.replaceState({ repeatSession: navigationSession, repeatIndex: 0 }, "");
+  } catch {
+    navigationSession = "";
+  }
+}
+
+function recordScreenHistory(name) {
+  if (!navigationSession || restoringNavigation || navigationReturnIndex !== null) return;
+  const previous = navigationTrail[navigationIndex];
+  if (previous.screen === name) {
+    if (name === SCREEN.player) previous.videoId = currentVideoId;
+    return;
+  }
+  const entry = { screen: name, videoId: currentVideoId, returnScreen: unlockReturnScreen };
+  const ancestorIndex = navigationTrail.slice(0, navigationIndex)
+    .map((item) => item.screen).lastIndexOf(name);
+  try {
+    if (ancestorIndex !== -1) {
+      // Render the explicit return immediately; consume its history entry asynchronously.
+      navigationReturnIndex = ancestorIndex;
+      history.go(ancestorIndex - navigationIndex);
+    } else if (name === SCREEN.parent && previous.screen === SCREEN.unlock) {
+      navigationTrail[navigationIndex] = entry;
+    } else {
+      history.pushState({ repeatSession: navigationSession, repeatIndex: navigationIndex + 1 }, "");
+      navigationTrail = navigationTrail.slice(0, navigationIndex + 1);
+      navigationTrail.push(entry);
+      navigationIndex += 1;
+    }
+  } catch {
+    navigationSession = "";
+    navigationReturnIndex = null;
+  }
+}
+
+function restoreScreenHistory(event) {
+  if (!navigationSession) return;
+  const index = event.state?.repeatIndex;
+  const entry = event.state?.repeatSession === navigationSession && navigationTrail[index];
+  if (entry && navigationReturnIndex === index) {
+    navigationIndex = index;
+    navigationReturnIndex = null;
+    // A new tile may have been tapped before the previous return finished.
+    recordScreenHistory(Object.keys(screens).find((name) => screens[name].classList.contains("active")));
+    return;
+  }
+
+  navigationReturnIndex = null;
+  restoringNavigation = true;
+  try {
+    const returningFromPlayer = currentVideoId !== null;
+    if (returningFromPlayer) leavePlayer();
+    stopSpeech();
+    els.unlockCode.value = "";
+    if (!entry) {
+      showScreen(SCREEN.home);
+      initializeScreenHistory();
+      focusWithoutScrolling(els.kidModeButton);
+      return;
+    }
+    navigationIndex = index;
+    if (returningFromPlayer && entry.screen === SCREEN.kid) return;
+    if (entry.screen === SCREEN.parent || entry.screen === SCREEN.unlock) {
+      // History records a destination, never authorization to enter Parent Mode.
+      openParentUnlock(entry.returnScreen || SCREEN.home);
+    } else if (entry.screen === SCREEN.player && findVideo(entry.videoId)) {
+      openPlayer(entry.videoId, false);
+    } else {
+      const name = entry.screen === SCREEN.home ? SCREEN.home : SCREEN.kid;
+      if (entry.screen === SCREEN.player) restoringNavigation = false;
+      showScreen(name);
+      focusWithoutScrolling(name === SCREEN.home ? els.kidModeButton : els.kidTitle);
+    }
+  } finally {
+    restoringNavigation = false;
+  }
 }
 
 function requestKidFullscreen() {
@@ -196,6 +288,7 @@ function openParentUnlock(returnScreen) {
 }
 
 function closeParentUnlock() {
+  els.unlockCode.value = "";
   showScreen(unlockReturnScreen);
   if (unlockReturnScreen === SCREEN.kid) {
     focusWithoutScrolling(els.kidParentButton);

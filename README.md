@@ -56,6 +56,11 @@ reported by the validator.
 
 Kid Mode has a small lock button for Parent Mode. It opens the code prompt; it does not exit Kid Mode directly. Cancelling that prompt returns to Kid Mode.
 
+Browser Back follows Repeat's screens before leaving the opening screen. Returning
+to Parent Mode through browser history requires the code again. Forward can restore
+a selected video, but playback waits for **Again**. A reload starts at the opening
+screen without automatically playing a video.
+
 If the unlock code is forgotten, clearing this site's browser data resets the app to the default code, but also removes every saved video, favorite, and setting.
 
 ## Kid Mode
