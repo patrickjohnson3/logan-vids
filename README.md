@@ -94,6 +94,8 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
   video, and desktop layouts keep the controls below it.
 - Taller portrait touch screens add a little space below Home while keeping the
   video and playback actions together. Enlarged text reduces that extra space.
+- Player controls use matching local icons. The favorite heart changes from an
+  outline to a filled heart when selected.
 
 ## YouTube URLs
 

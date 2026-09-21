@@ -79,7 +79,6 @@ function renderPlayerControls(video) {
   const label = isFavorite ? "Remove" : "Favorites";
   const similarVideo = video ? findSimilarVideo(video.id) : null;
   els.favoriteButton.disabled = !video;
-  els.favoriteButton.querySelector(".favorite-icon").textContent = isFavorite ? "♥" : "♡";
   els.favoriteButton.querySelector(".player-button-label").textContent = label;
   els.favoriteButton.setAttribute("aria-pressed", String(isFavorite));
   els.favoriteButton.setAttribute(

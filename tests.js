@@ -1425,6 +1425,29 @@ test("history never restores Parent authorization", () => {
   });
 });
 
+test("favorite rendering preserves its icon and exposes both toggle states", () => {
+  withControlledPlayerPlayback(() => {
+    const icon = els.favoriteButton.querySelector("svg");
+    const shape = icon?.querySelector("path");
+    assert(shape, "the favorite control should start with its heart icon");
+    openPlayer("AbCdEfGhI_j", false);
+    assert(icon.contains(shape), "rendering should preserve the heart shape");
+    assert(els.favoriteButton.getAttribute("aria-pressed") === "false", "an ordinary video should be unselected");
+    assert(els.favoriteButton.getAttribute("aria-label") === "Add to favorites", "the unselected action should be named");
+
+    toggleCurrentFavorite();
+    assert(isFavoriteVideo(findVideo("AbCdEfGhI_j")), "the first toggle should favorite the video");
+    assert(els.favoriteButton.getAttribute("aria-pressed") === "true", "the favorite should be selected");
+    assert(els.favoriteButton.getAttribute("aria-label") === "Remove from favorites", "the selected action should be named");
+    assert(icon.contains(shape), "selecting should preserve the heart shape");
+
+    toggleCurrentFavorite();
+    assert(!isFavoriteVideo(findVideo("AbCdEfGhI_j")), "the second toggle should remove the favorite");
+    assert(els.favoriteButton.getAttribute("aria-pressed") === "false", "removing should clear the selected state");
+    assert(icon.contains(shape), "deselecting should preserve the heart shape");
+  });
+});
+
 test("player waits for startup speech and replaces Preparing with one iframe", () => {
   withControlledPlayerPlayback((controls) => {
     openPlayer("AbCdEfGhI_j");

@@ -593,12 +593,24 @@ select {
   overflow-wrap: anywhere;
 }
 
+.player-icon {
+  display: block;
+  width: clamp(28px, 2rem, 48px);
+  height: clamp(28px, 2rem, 48px);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .favorite-icon {
   color: var(--muted);
 }
 
 .player-button[aria-pressed="true"] .favorite-icon {
   color: var(--favorite);
+  fill: currentColor;
 }
 
 @media (prefers-reduced-motion: reduce) {
