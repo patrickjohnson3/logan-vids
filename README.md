@@ -92,6 +92,8 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - On wide, short touch screens, Home sits beside the video and the action column
   narrows to give the picture more room. Narrower windows retain Home above the
   video, and desktop layouts keep the controls below it.
+- Taller portrait touch screens add a little space below Home while keeping the
+  video and playback actions together. Enlarged text reduces that extra space.
 
 ## YouTube URLs
 

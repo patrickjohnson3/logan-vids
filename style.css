@@ -676,6 +676,12 @@ select {
   }
 }
 
+@media (orientation: portrait) and (min-height: 700px) and (pointer: coarse) {
+  .player-video-area {
+    row-gap: clamp(8px, calc(20dvh - 8rem), 64px);
+  }
+}
+
 @media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
   .app-shell:fullscreen .player-layout.active,
   .player-layout.active {
