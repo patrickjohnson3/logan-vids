@@ -18,6 +18,8 @@ replacement imports or destructive checks against the child's live library.
 - [ ] Verify normal speech completion and the timeout fallback with short and
   maximum-length titles. During speech, exercise Again and Home repeatedly and confirm
   that no stale iframe starts afterward.
+- [ ] Switch apps and lock/unlock during title speech. Confirm no delayed playback
+  starts while hidden or on return, then confirm Again resumes the selected video.
 - [ ] Verify Kid Mode fullscreen entry, the Parent Mode unlock while remaining
   fullscreen, Parent Mode fullscreen exit, and return paths after fullscreen
   permission is denied.

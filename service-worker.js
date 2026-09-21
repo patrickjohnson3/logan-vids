@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "repeat-logan-vids-shell-ca41a1506a4c";
+const CACHE_NAME = "repeat-logan-vids-shell-883c5721bf3a";
 const CACHE_PREFIX = "repeat-logan-vids-shell-";
 const APP_SHELL = [
   "./",

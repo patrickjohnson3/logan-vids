@@ -1359,6 +1359,31 @@ test("player waits for startup speech and replaces Preparing with one iframe", (
   });
 });
 
+test("a hidden page cannot start delayed playback", () => {
+  const hiddenDescriptor = Object.getOwnPropertyDescriptor(document, "hidden");
+  try {
+    withControlledPlayerPlayback((controls) => {
+      openPlayer("AbCdEfGhI_j");
+      Object.defineProperty(document, "hidden", { configurable: true, value: true });
+      controls.fireNextTimer();
+      controls.completeSpeech(0);
+      assert(!els.playerFrameWrap.querySelector("iframe"), "hidden preparation must not create an iframe");
+      assert(currentVideoId === "AbCdEfGhI_j", "interruption should retain the selection");
+      assert(els.playerFrameWrap.getAttribute("aria-busy") === "false", "interruption should finish preparation");
+      assert(els.playerFrameWrap.textContent.includes("Again"), "interruption should explain explicit resume");
+      Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      controls.fireAllTimers();
+      assert(!els.playerFrameWrap.querySelector("iframe"), "becoming visible must not replay stale work");
+      playCurrentAgain();
+      controls.completeSpeech(1);
+      assert(controls.getPlayerStartCount() === 1, "Again should start exactly one player after return");
+    });
+  } finally {
+    if (hiddenDescriptor) Object.defineProperty(document, "hidden", hiddenDescriptor);
+    else delete document.hidden;
+  }
+});
+
 test("player timeout fallback starts playback exactly once", () => {
   withControlledPlayerPlayback((controls) => {
     openPlayer("AbCdEfGhI_j");
@@ -1673,6 +1698,28 @@ test("init wires the major Kid, Player, and Parent flows", () => {
 
     assert(screens[SCREEN.parent].classList.contains("active"), "correct code should show Parent Mode");
     assert(document.activeElement === els.parentTitle, "correct code should focus the Parent heading");
+
+    withControlledPlayerPlayback((controls) => {
+      openPlayer("AbCdEfGhI_j");
+      window.dispatchEvent(new Event("pagehide"));
+      controls.completeSpeech(0);
+      controls.fireAllTimers();
+      assert(!els.playerFrameWrap.querySelector("iframe"), "pagehide should cancel pending playback");
+      assert(!playerPreparationPending, "pagehide should clear preparation");
+      playCurrentAgain();
+      const hiddenDescriptor = Object.getOwnPropertyDescriptor(document, "hidden");
+      try {
+        Object.defineProperty(document, "hidden", { configurable: true, value: true });
+        document.dispatchEvent(new Event("visibilitychange"));
+        assert(!playerPreparationPending, "visibilitychange should cancel preparation immediately");
+      } finally {
+        if (hiddenDescriptor) Object.defineProperty(document, "hidden", hiddenDescriptor);
+        else delete document.hidden;
+      }
+      controls.completeSpeech(1);
+      controls.fireAllTimers();
+      assert(!els.playerFrameWrap.querySelector("iframe"), "late speech completion must stay cancelled");
+    });
   } finally {
     invalidatePendingPlayerStart();
     els.playerFrameWrap.innerHTML = "";

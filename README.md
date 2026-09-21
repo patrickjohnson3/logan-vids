@@ -67,6 +67,8 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 
 - Videos appear in a stable grid with YouTube thumbnails and text labels.
 - Tapping a tile speaks its title, then starts the selected video.
+- If the app is hidden or left during title speech, pending playback is cancelled.
+  The selection remains ready for **Again** when you return; it does not start itself.
 - **Again** speaks “again”, then restarts the same video.
 - **Home** returns to the library's previous scroll position and brings the
   originating tile into view. Parent form errors also bring the invalid field into view.

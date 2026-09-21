@@ -108,6 +108,10 @@ function registerServiceWorker() {
 
 function bindEvents() {
   window.addEventListener("popstate", restoreScreenHistory);
+  window.addEventListener("pagehide", pausePendingPlayerStart);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pausePendingPlayerStart();
+  });
   els.kidModeButton.addEventListener("click", enterKidMode);
 
   els.parentModeButton.addEventListener("click", () => openParentUnlock(SCREEN.home));

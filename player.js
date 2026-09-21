@@ -24,8 +24,7 @@ function openPlayer(id, autoplay = true) {
   if (autoplay) {
     startPlayerAfterSpeech(video.title, video.id);
   } else {
-    els.playerFrameWrap.setAttribute("aria-busy", "false");
-    els.playerFrameWrap.querySelector(".player-preparing-status").textContent = "Press Again to play.";
+    renderPlayerReady();
   }
 }
 
@@ -133,6 +132,10 @@ function startPlayerAfterSpeech(text, videoId) {
       currentVideoId === videoId &&
       screens[SCREEN.player].classList.contains("active")
     ) {
+      if (document.hidden) {
+        pausePendingPlayerStart();
+        return;
+      }
       playerPreparationPending = false;
       pendingPlayerStartTimeoutId = null;
       startCurrentPlayer(true);
@@ -146,6 +149,18 @@ function startPlayerAfterSpeech(text, videoId) {
     window.clearTimeout(timeoutId);
     startPlayer();
   });
+}
+
+function renderPlayerReady() {
+  els.playerFrameWrap.setAttribute("aria-busy", "false");
+  els.playerFrameWrap.querySelector(".player-preparing-status").textContent = "Press Again to play.";
+}
+
+function pausePendingPlayerStart() {
+  if (!playerPreparationPending) return;
+  invalidatePendingPlayerStart();
+  stopSpeech();
+  renderPlayerReady();
 }
 
 function renderPlayerPreparing(video) {
