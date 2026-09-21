@@ -551,7 +551,7 @@ select {
 
 .player-controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -563,7 +563,7 @@ select {
   place-items: center;
   align-content: center;
   gap: 8px;
-  padding: 12px;
+  padding: 12px 6px;
   border-width: 1px;
   border-radius: 14px;
   font-size: 2rem;

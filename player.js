@@ -76,14 +76,14 @@ function toggleCurrentFavorite() {
 
 function renderPlayerControls(video) {
   const isFavorite = isFavoriteVideo(video);
-  const label = isFavorite ? "Remove" : "Favorites";
+  const label = isFavorite ? "Favorited" : "Favorite";
   const similarVideo = video ? findSimilarVideo(video.id) : null;
   els.favoriteButton.disabled = !video;
   els.favoriteButton.querySelector(".player-button-label").textContent = label;
   els.favoriteButton.setAttribute("aria-pressed", String(isFavorite));
   els.favoriteButton.setAttribute(
     "aria-label",
-    isFavorite ? "Remove from favorites" : "Add to favorites"
+    isFavorite ? "Favorited: remove from favorites" : "Favorite: add to favorites"
   );
   els.similarButton.disabled = !similarVideo;
   els.similarButton.setAttribute(

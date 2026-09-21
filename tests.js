@@ -1432,18 +1432,22 @@ test("favorite rendering preserves its icon and exposes both toggle states", () 
     assert(shape, "the favorite control should start with its heart icon");
     openPlayer("AbCdEfGhI_j", false);
     assert(icon.contains(shape), "rendering should preserve the heart shape");
+    assert(els.favoriteButton.querySelector(".player-button-label").textContent === "Favorite", "an ordinary video should offer Favorite");
     assert(els.favoriteButton.getAttribute("aria-pressed") === "false", "an ordinary video should be unselected");
-    assert(els.favoriteButton.getAttribute("aria-label") === "Add to favorites", "the unselected action should be named");
+    assert(els.favoriteButton.getAttribute("aria-label") === "Favorite: add to favorites", "the accessible action should include the visible label");
 
     toggleCurrentFavorite();
     assert(isFavoriteVideo(findVideo("AbCdEfGhI_j")), "the first toggle should favorite the video");
+    assert(els.favoriteButton.querySelector(".player-button-label").textContent === "Favorited", "the selected video should show Favorited");
     assert(els.favoriteButton.getAttribute("aria-pressed") === "true", "the favorite should be selected");
-    assert(els.favoriteButton.getAttribute("aria-label") === "Remove from favorites", "the selected action should be named");
+    assert(els.favoriteButton.getAttribute("aria-label") === "Favorited: remove from favorites", "the selected name should include the state label and removal scope");
     assert(icon.contains(shape), "selecting should preserve the heart shape");
 
     toggleCurrentFavorite();
     assert(!isFavoriteVideo(findVideo("AbCdEfGhI_j")), "the second toggle should remove the favorite");
+    assert(els.favoriteButton.querySelector(".player-button-label").textContent === "Favorite", "removing should restore the Favorite label");
     assert(els.favoriteButton.getAttribute("aria-pressed") === "false", "removing should clear the selected state");
+    assert(els.favoriteButton.getAttribute("aria-label") === "Favorite: add to favorites", "removing should restore the accessible add action");
     assert(icon.contains(shape), "deselecting should preserve the heart shape");
   });
 });

@@ -80,7 +80,8 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - **Again** speaks “again”, then restarts the same video.
 - **Home** returns to the library's previous scroll position and brings the
   originating tile into view. Parent form errors also bring the invalid field into view.
-- **Favorites** adds a video to favorites. The control becomes **Remove** when it is already favorited.
+- **Favorite** adds a video to favorites. The selected control reads **Favorited**;
+  tapping it again removes the video from favorites without deleting it.
 - **Similar** selects the next saved video with at least one matching parent tag, then speaks its title before playback.
 - Favorites remain at the top of Kid Mode in their saved order and do not repeat in the video grid.
 - Every approved video is configured to loop, avoiding YouTube end-screen recommendations.
@@ -250,7 +251,7 @@ destructive actions against the child's live library merely for validation.
 1. Open `tests.html` and confirm all helper tests pass.
 2. Enter Kid Mode and confirm fullscreen starts; open Parent Mode and confirm fullscreen exits.
 3. Add valid watch URLs with tags, then confirm thumbnails, speech prompts, autoplay, Again, Similar, and Home controls work.
-4. Toggle Favorites/Remove and confirm the favorite row updates after returning to Kid Mode.
+4. Toggle Favorite/Favorited and confirm the favorite row updates after returning to Kid Mode.
 5. Switch Video grid order between Manual and A to Z, then confirm Kid Mode reflects the selected order.
 6. Import a valid TOML file, cancel the replacement warning once, then confirm a second import replaces settings, videos, favorites, and tags.
 7. Import TOML with a duplicate key, invalid setting, invalid URL, invalid favorite value, overlong title, and overlong tags; each must show an error without changing saved data.
