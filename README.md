@@ -54,6 +54,8 @@ reported by the validator.
 4. Use **Edit**, **Up**, **Down**, and **Delete** to curate the stable Kid Mode grid.
 5. Adjust the unlock code, speech feedback, YouTube controls, speech rate, and theme in Settings.
 
+Long titles, tags, and URLs wrap within saved-video rows on narrow screens.
+
 An open video's edit draft survives other library actions and leaving/returning to
 Parent Mode during the same page session. **Save** applies it; **Cancel** discards it.
 Switching to another video asks before discarding unsaved edits. Confirmed TOML
