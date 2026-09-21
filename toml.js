@@ -37,6 +37,7 @@ function importToml(text, storage) {
   }
 
   const persisted = replaceState(result.state, storage);
+  editingVideoId = null;
   applyTheme();
   renderParent();
   setMessage(

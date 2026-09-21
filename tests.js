@@ -885,6 +885,97 @@ test("video actions preserve unsaved Parent settings", () => {
   }
 });
 
+test("library actions preserve raw metadata drafts until Save", () => {
+  const previousConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    withParentVideoState([
+      { id: "AbCdEfGhI_j", title: "Trains", tags: "calm" },
+      { id: "BbCdEfGhI_j", title: "Music" }
+    ], () => {
+      startEditingVideo("AbCdEfGhI_j");
+      const inputs = () => getParentVideoItem("AbCdEfGhI_j").querySelectorAll("input");
+      inputs()[0].value = "  Train rides  ";
+      inputs()[1].value = " calm , trains ";
+      getParentActionForTest("BbCdEfGhI_j", "up").click();
+      assert(inputs()[0].value === "  Train rides  ", "reordering a sibling must retain the raw title draft");
+      assert(inputs()[1].value === " calm , trains ", "reordering must retain the raw tag draft");
+      els.videoTitle.value = "New video";
+      els.videoTags.value = "";
+      els.videoUrl.value = "https://youtu.be/CbCdEfGhI_j";
+      addVideoFromForm({ preventDefault() {} });
+      deleteVideo("BbCdEfGhI_j");
+      showScreen(SCREEN.home);
+      showScreen(SCREEN.parent);
+      assert(inputs()[0].value === "  Train rides  ", "list changes and a return to Parent must preserve the draft");
+      assert(inputs()[1].value === " calm , trains ", "the tag draft should survive every rerender");
+      assert(findVideo("AbCdEfGhI_j").title === "Trains", "drafts must not save implicitly");
+      getParentActionForTest("AbCdEfGhI_j", "save").click();
+      assert(findVideo("AbCdEfGhI_j").title === "Train rides", "Save should persist the retained draft");
+      assert(tagsToString(findVideo("AbCdEfGhI_j").tags) === "calm, trains", "Save should normalize retained tags");
+    });
+  } finally {
+    window.confirm = previousConfirm;
+  }
+});
+
+test("switching editors requires confirmation only for a changed draft", () => {
+  const previousConfirm = window.confirm;
+  let allowDiscard = false;
+  let confirmations = 0;
+  window.confirm = () => { confirmations += 1; return allowDiscard; };
+  try {
+    withParentVideoState([
+      { id: "AbCdEfGhI_j", title: "Trains" },
+      { id: "BbCdEfGhI_j", title: "Music" }
+    ], () => {
+      startEditingVideo("AbCdEfGhI_j");
+      startEditingVideo("BbCdEfGhI_j");
+      assert(confirmations === 0, "an unchanged editor should not need confirmation");
+      const input = getParentVideoItem("BbCdEfGhI_j").querySelector("input");
+      input.value = "New music";
+      startEditingVideo("AbCdEfGhI_j");
+      assert(editingVideoId === "BbCdEfGhI_j", "cancelled discard should keep the current editor");
+      assert(input.value === "New music", "cancelled discard should keep the draft");
+      assert(document.activeElement === input, "cancelled discard should reveal the retained draft");
+      allowDiscard = true;
+      startEditingVideo("AbCdEfGhI_j");
+      assert(editingVideoId === "AbCdEfGhI_j", "confirmed discard should switch editors");
+      assert(findVideo("BbCdEfGhI_j").title === "Music", "discard must not save the old draft");
+    });
+  } finally {
+    window.confirm = previousConfirm;
+  }
+});
+
+test("only accepted TOML replacement discards a same-video edit draft", () => {
+  const previousConfirm = window.confirm;
+  let acceptImport = false;
+  window.confirm = () => acceptImport;
+  try {
+    withParentVideoState([{ id: "AbCdEfGhI_j", title: "Trains" }], () => {
+      startEditingVideo("AbCdEfGhI_j");
+      const input = getParentVideoItem("AbCdEfGhI_j").querySelector("input");
+      input.value = "Unsaved title";
+      const replacement = writeRepeatToml(normalizeState({
+        settings: {}, videos: [{ id: "AbCdEfGhI_j", title: "Imported title" }]
+      }));
+      importToml("invalid TOML");
+      assert(input.isConnected && input.value === "Unsaved title", "invalid import should preserve the draft");
+      importToml(replacement);
+      assert(input.isConnected && input.value === "Unsaved title", "cancelled import should preserve the draft");
+      acceptImport = true;
+      importToml(replacement);
+      assert(editingVideoId === null, "accepted import should close the old editor");
+      startEditingVideo("AbCdEfGhI_j");
+      assert(getParentVideoItem("AbCdEfGhI_j").querySelector("input").value === "Imported title", "same-ID import must not resurrect stale edits");
+    });
+  } finally {
+    window.confirm = previousConfirm;
+    setMessage(els.tomlMessage, "");
+  }
+});
+
 test("Parent video actions include the video title in accessible names", () => {
   withParentVideoState([
     { id: "AbCdEfGhI_j", title: "Trains" },

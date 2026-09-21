@@ -23,6 +23,7 @@ function renderParentStorageWarning() {
 }
 
 function renderParentVideoList() {
+  const activeEditor = getParentVideoItem(editingVideoId)?.querySelector(".parent-video-edit");
   els.parentVideoList.innerHTML = "";
   els.emptyParentMessage.hidden = getVideoCount() > 0;
 
@@ -42,7 +43,7 @@ function renderParentVideoList() {
     tags.textContent = video.tags.length > 0 ? `Tags: ${tagsToString(video.tags)}` : "No tags";
 
     if (editingVideoId === video.id) {
-      item.append(url, makeVideoMetadataEditor(video));
+      item.append(url, activeEditor || makeVideoMetadataEditor(video));
       els.parentVideoList.append(item);
       return;
     }

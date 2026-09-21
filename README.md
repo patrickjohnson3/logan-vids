@@ -54,6 +54,12 @@ reported by the validator.
 4. Use **Edit**, **Up**, **Down**, and **Delete** to curate the stable Kid Mode grid.
 5. Adjust the unlock code, speech feedback, YouTube controls, speech rate, and theme in Settings.
 
+An open video's edit draft survives other library actions and leaving/returning to
+Parent Mode during the same page session. **Save** applies it; **Cancel** discards it.
+Switching to another video asks before discarding unsaved edits. Confirmed TOML
+replacement or clearing the library also discards the draft. Reloading the page does
+not preserve unsaved drafts.
+
 Kid Mode has a small lock button for Parent Mode. It opens the code prompt; it does not exit Kid Mode directly. Cancelling that prompt returns to Kid Mode.
 
 Browser Back follows Repeat's screens before leaving the opening screen. Returning

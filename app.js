@@ -443,6 +443,16 @@ function clearAllVideos() {
 }
 
 function startEditingVideo(id) {
+  const editedVideo = findVideo(editingVideoId);
+  const inputs = getParentVideoItem(editingVideoId)?.querySelectorAll(".parent-video-edit input");
+  if (
+    editingVideoId !== id && editedVideo && inputs?.length === 2 &&
+    (inputs[0].value !== editedVideo.title || inputs[1].value !== tagsToString(editedVideo.tags)) &&
+    !confirm(`Discard unsaved edits to "${editedVideo.title}"?`)
+  ) {
+    focusAndReveal(inputs[0]);
+    return;
+  }
   editingVideoId = id;
   renderParentVideoList();
   const titleInput = getParentVideoItem(id)?.querySelector("input");
