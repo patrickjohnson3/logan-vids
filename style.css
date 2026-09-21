@@ -722,3 +722,23 @@ select {
     grid-template-columns: auto minmax(0, 1fr);
   }
 }
+
+@media (min-width: 740px) and (min-aspect-ratio: 2/1) and (max-height: 600px) and (pointer: coarse) {
+  .app-shell:fullscreen .player-layout.active,
+  .player-layout.active {
+    grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 20%);
+  }
+
+  .player-video-area {
+    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .player-frame-wrap {
+    width: min(100%, calc((100dvh - 24px) * 16 / 9));
+    height: auto;
+    margin-block: auto;
+  }
+}

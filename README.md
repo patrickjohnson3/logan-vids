@@ -89,6 +89,9 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
   and **Again** available. Restoring connectivity does not autoplay; press **Again**.
 - Enlarged text can reflow the player buttons into fewer columns. Status messages
   expand to remain readable; very small windows can scroll to reach every control.
+- On wide, short touch screens, Home sits beside the video and the action column
+  narrows to give the picture more room. Narrower windows retain Home above the
+  video, and desktop layouts keep the controls below it.
 
 ## YouTube URLs
 
