@@ -68,6 +68,8 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - Favorites remain at the top of Kid Mode in their saved order and do not repeat in the video grid.
 - Every approved video is configured to loop, avoiding YouTube end-screen recommendations.
 - If the browser reports no connection, the player keeps the selected thumbnail and leaves **Home** and **Again** available without opening YouTube.
+- Enlarged text can reflow the player buttons into fewer columns. Status messages
+  expand to remain readable; very small windows can scroll to reach every control.
 
 ## YouTube URLs
 

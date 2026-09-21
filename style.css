@@ -501,7 +501,21 @@ select {
   background: #000;
 }
 
+.player-frame-wrap:has(.player-state-thumbnail) {
+  display: grid;
+  aspect-ratio: auto;
+}
+
+/* Keep the thumbnail ratio unless the status needs more room at large text sizes. */
+.player-frame-wrap:has(.player-state-thumbnail)::before {
+  content: "";
+  grid-area: 1 / 1;
+  padding-top: 56.25%;
+}
+
 .player-state-thumbnail {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -510,10 +524,9 @@ select {
 
 .player-preparing-status,
 .player-offline-message {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  position: relative;
+  grid-area: 1 / 1;
+  align-self: end;
   margin: 0;
   padding: 12px;
   background: rgba(0, 0, 0, 0.82);
@@ -537,7 +550,7 @@ select {
 
 .player-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -627,9 +640,6 @@ select {
     min-height: 170px;
   }
 
-  .player-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 420px) {
@@ -668,7 +678,7 @@ select {
   .app-shell:fullscreen .player-layout.active,
   .player-layout.active {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(112px, 22%);
+    grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 28%);
     gap: 12px;
     height: calc(100dvh - 24px);
     min-height: 0;
@@ -697,9 +707,16 @@ select {
   .player-button {
     min-height: 72px;
     font-size: 1.5rem;
+    line-height: 1;
   }
 
   .player-button .player-button-label {
     font-size: 1rem;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 320px) and (pointer: coarse) {
+  .player-button {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 }
