@@ -191,6 +191,7 @@ function initializeScreenHistory() {
   navigationReturnIndex = null;
   try {
     history.replaceState({ repeatSession: navigationSession, repeatIndex: 0 }, "");
+    history.scrollRestoration = "manual";
   } catch {
     navigationSession = "";
   }
@@ -441,7 +442,7 @@ function startEditingVideo(id) {
   editingVideoId = id;
   renderParentVideoList();
   const titleInput = getParentVideoItem(id)?.querySelector("input");
-  if (titleInput) focusWithoutScrolling(titleInput);
+  if (titleInput) focusAndReveal(titleInput);
 }
 
 function saveVideoMetadata(id, titleInput, tagsInput) {
@@ -499,7 +500,7 @@ function focusParentVideoAction(id, action) {
   if (!control || control.disabled) {
     control = item.querySelector("[data-parent-action=edit]");
   }
-  if (control) focusWithoutScrolling(control);
+  if (control) focusAndReveal(control);
 }
 
 function getSettingsErrorField(error) {
@@ -516,7 +517,7 @@ function showFieldValidationError(field, message, text) {
   setMessage(message, text);
   field.setAttribute("aria-invalid", "true");
   field.setAttribute("aria-describedby", message.id);
-  focusWithoutScrolling(field);
+  focusAndReveal(field);
 }
 
 function clearFieldValidation(field, message) {
@@ -549,5 +550,18 @@ function focusWithoutScrolling(element) {
     element.focus({ preventScroll: true });
   } catch {
     element.focus();
+  }
+}
+
+function focusAndReveal(element) {
+  focusWithoutScrolling(element);
+  const rect = element.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const top = viewport ? viewport.offsetTop : 0;
+  const left = viewport ? viewport.offsetLeft : 0;
+  const height = viewport ? viewport.height : window.innerHeight;
+  const width = viewport ? viewport.width : window.innerWidth;
+  if (rect.top < top || rect.bottom > top + height || rect.left < left || rect.right > left + width) {
+    element.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 }

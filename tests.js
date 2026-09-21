@@ -92,6 +92,7 @@ function withControlledPlayerPlayback(run) {
   const previousPendingTimeoutId = pendingPlayerStartTimeoutId;
   const previousPreparationPending = playerPreparationPending;
   const previousPlayerOriginVideoId = playerOriginVideoId;
+  const previousPlayerOriginScroll = playerOriginScroll;
   const previousStartCurrentPlayer = startCurrentPlayer;
   const previousSpeak = speak;
   const previousStopSpeech = stopSpeech;
@@ -202,6 +203,7 @@ function withControlledPlayerPlayback(run) {
     pendingPlayerStartTimeoutId = previousPendingTimeoutId;
     playerPreparationPending = previousPreparationPending;
     playerOriginVideoId = previousPlayerOriginVideoId;
+    playerOriginScroll = previousPlayerOriginScroll;
     els.playerFrameWrap.innerHTML = "";
     els.playerFrameWrap.setAttribute("aria-busy", "false");
     els.playerFrameWrap.removeAttribute("aria-describedby");
@@ -1092,6 +1094,27 @@ test("Settings custom validation focuses and describes the invalid field", () =>
   });
 });
 
+test("validation reveals a field below the visible viewport", () => {
+  const field = document.createElement("input");
+  const previousScroll = window.scrollY;
+  field.style.position = "absolute";
+  field.style.top = `${window.innerHeight + 100}px`;
+  field.style.left = "24px";
+  document.body.append(field);
+  try {
+    window.scrollTo(0, 0);
+    assert(field.getBoundingClientRect().top > window.innerHeight, "the invalid field should start offscreen");
+    showFieldValidationError(field, els.settingsMessage, "Check this field.");
+    const rect = field.getBoundingClientRect();
+    assert(document.activeElement === field, "validation should focus the field");
+    assert(rect.top >= 0 && rect.bottom <= window.innerHeight, "validation should reveal the whole field");
+  } finally {
+    field.remove();
+    setMessage(els.settingsMessage, "");
+    window.scrollTo(0, previousScroll);
+  }
+});
+
 test("Home to Kid Mode focuses the Kid heading", () => {
   const previousRequestKidFullscreen = requestKidFullscreen;
   const previousSpeak = speak;
@@ -1189,7 +1212,8 @@ function withScreenHistoryForTest(run) {
   const previous = {
     session: navigationSession, trail: navigationTrail, index: navigationIndex,
     returnIndex: navigationReturnIndex, restoring: restoringNavigation,
-    push: history.pushState, replace: history.replaceState, go: history.go
+    push: history.pushState, replace: history.replaceState, go: history.go,
+    scrollRestoration: history.scrollRestoration
   };
   const entries = [];
   let position = 0;
@@ -1226,6 +1250,7 @@ function withScreenHistoryForTest(run) {
     history.pushState = previous.push;
     history.replaceState = previous.replace;
     history.go = previous.go;
+    history.scrollRestoration = previous.scrollRestoration;
   }
 }
 
@@ -1585,6 +1610,7 @@ test("init wires the major Kid, Player, and Parent flows", () => {
   const previousPendingTimeoutId = pendingPlayerStartTimeoutId;
   const previousPreparationPending = playerPreparationPending;
   const previousPlayerOriginVideoId = playerOriginVideoId;
+  const previousPlayerOriginScroll = playerOriginScroll;
   const previousBrowserIsOnline = browserIsOnline;
   const hadOwnRequestFullscreen = Object.prototype.hasOwnProperty.call(
     els.app,
@@ -1667,6 +1693,7 @@ test("init wires the major Kid, Player, and Parent flows", () => {
     pendingPlayerStartTimeoutId = previousPendingTimeoutId;
     playerPreparationPending = previousPreparationPending;
     playerOriginVideoId = previousPlayerOriginVideoId;
+    playerOriginScroll = previousPlayerOriginScroll;
     showScreen(SCREEN.home);
   }
 });

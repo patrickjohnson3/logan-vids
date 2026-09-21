@@ -6,11 +6,13 @@ let playerStartToken = 0;
 let pendingPlayerStartTimeoutId = null;
 let playerPreparationPending = false;
 let playerOriginVideoId = null;
+let playerOriginScroll = null;
 
 function openPlayer(id, autoplay = true) {
   const video = findVideo(id);
   if (!video) return;
 
+  playerOriginScroll = { page: window.scrollY, app: els.app.scrollTop };
   currentVideoId = video.id;
   playerOriginVideoId = video.id;
   renderPlayerControls(video);
@@ -209,6 +211,7 @@ function invalidatePendingPlayerStart() {
 
 function leavePlayer() {
   const returnFocusVideoId = playerOriginVideoId;
+  const returnScroll = playerOriginScroll;
   invalidatePendingPlayerStart();
   stopSpeech();
   els.playerFrameWrap.innerHTML = "";
@@ -217,10 +220,15 @@ function leavePlayer() {
   els.playerTitle.textContent = "Player";
   currentVideoId = null;
   playerOriginVideoId = null;
+  playerOriginScroll = null;
   showScreen(SCREEN.kid);
+  if (returnScroll) {
+    window.scrollTo(0, returnScroll.page);
+    els.app.scrollTop = returnScroll.app;
+  }
   const returnTile = Array.from(screens[SCREEN.kid].querySelectorAll(".video-tile"))
     .find((tile) => tile.dataset.videoId === returnFocusVideoId);
-  focusWithoutScrolling(returnTile || els.kidTitle);
+  focusAndReveal(returnTile || els.kidTitle);
 }
 
 function returnToKidMode() {

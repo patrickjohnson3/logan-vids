@@ -68,6 +68,8 @@ If the unlock code is forgotten, clearing this site's browser data resets the ap
 - Videos appear in a stable grid with YouTube thumbnails and text labels.
 - Tapping a tile speaks its title, then starts the selected video.
 - **Again** speaks “again”, then restarts the same video.
+- **Home** returns to the library's previous scroll position and brings the
+  originating tile into view. Parent form errors also bring the invalid field into view.
 - **Favorites** adds a video to favorites. The control becomes **Remove** when it is already favorited.
 - **Similar** selects the next saved video with at least one matching parent tag, then speaks its title before playback.
 - Favorites remain at the top of Kid Mode in their saved order and do not repeat in the video grid.
